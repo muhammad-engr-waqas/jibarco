@@ -190,7 +190,7 @@
                     <!-- 04 . AUTHORIZED SIGNATORY -->
                     <div class="section-card">
                         <div class="section-title">04 · AUTHORIZED SIGNATORY</div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                             <div>
                                 <label class="form-label">PREPARED BY (NAME)</label>
                                 <input type="text" id="preparedByName" class="form-input" placeholder="Mr. Faisal Salem">
@@ -199,6 +199,10 @@
                                 <label class="form-label">POSITION</label>
                                 <input type="text" id="preparedByPosition" class="form-input" placeholder="Manager-JIBARCO">
                             </div>
+                        </div>
+                        <div>
+                            <label class="form-label">PHONE NUMBER</label>
+                            <input type="text" id="preparedByPhone" class="form-input" placeholder="+966597337289">
                         </div>
                     </div>
 
@@ -257,6 +261,7 @@
 
         document.getElementById('preparedByName').value = 'Mr. Faisal Salem';
         document.getElementById('preparedByPosition').value = 'Manager-JIBARCO';
+        document.getElementById('preparedByPhone').value = '+966597337289';
 
         document.getElementById('itemsContainer').innerHTML = '';
         document.getElementById('termsContainer').innerHTML = '';
@@ -361,6 +366,7 @@
         const introText = document.getElementById('introText').value || '';
         const preparedName = document.getElementById('preparedByName').value || 'Mr. Faisal Salem';
         const preparedPos = document.getElementById('preparedByPosition').value || 'Manager-JIBARCO';
+        const preparedPhone = document.getElementById('preparedByPhone').value || '+966597337289';
 
         let emailHTML = '';
         if(clientEmails.length > 0) {
@@ -495,7 +501,7 @@
                         <div style="font-size: 8px; font-weight: 800; color: #94a3b8; uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">PREPARED BY:</div>
                         <div style="font-weight: 800; font-size: 11px; color: #000;">${preparedName}</div>
                         <div style="font-size: 9px; font-weight: 600; color: #475569;">${preparedPos}</div>
-                        <div style="font-size: 8.5px; font-weight: 500; color: #64748b; margin-top: 1px;">+966597337289</div>
+                        <div style="font-size: 8.5px; font-weight: 500; color: #64748b; margin-top: 1px;">${preparedPhone}</div>
                     </div>
                     <div style="display: table-cell; vertical-align: bottom; text-align: right; width: 50%;">
                         <div style="border-top: 1px solid #94a3b8; width: 170px; margin-left: auto; padding-top: 4px; text-align: center;">
