@@ -24,7 +24,7 @@
         .btn-ghost:hover { background:#f8fafc; color:#0f172a; }
         .nav-pill { padding:6px 16px; border-radius:6px; font-size:11px; font-weight:700; color:#475569; background:#fff; border:1px solid #cbd5e1; cursor:pointer; }
         .nav-pill.active { background:#1e293b; color:#fff; border-color:#1e293b; }
-        .pdf-page { width:210mm; min-height:297mm; box-sizing:border-box; background:#fff; margin:0 auto 20px auto; padding:10mm 10mm; font-family:Arial,Helvetica,sans-serif; position:relative; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+        .pdf-page { width:210mm; min-height:296.5mm; max-height:296.5mm; box-sizing:border-box; background:#fff; margin:0 auto 20px auto; padding:8mm 10mm; font-family:Arial,Helvetica,sans-serif; position:relative; box-shadow:0 4px 12px rgba(0,0,0,0.08); overflow:hidden; }
         .term-row { border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:8px; background:#f8fafc; }
     </style>
 </head>
@@ -121,6 +121,77 @@
     <div id="termsContainer"></div>
 </div>
 
+<!-- 05 · OFFICIAL STAMPS & SIGNATURES -->
+<div class="section-card border-l-4 border-l-emerald-600">
+    <div class="section-title mb-3 flex items-center justify-between">
+        <span>05 · OFFICIAL STAMPS &amp; SIGNATURES / الأختام والتوقيع</span>
+        <span class="text-[9.5px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded tracking-normal">Auto-Background Removal</span>
+    </div>
+    <p class="text-[11px] text-slate-500 mb-3 font-medium">Select stamp images from your PC. The system automatically removes white paper backgrounds like in MS Word, making stamps transparent on the contract.</p>
+
+    <!-- FIRST PARTY STAMP (JIBARCO) -->
+    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg mb-4">
+        <div class="flex items-center justify-between mb-2">
+            <span class="font-bold text-xs text-blue-900">First Party Stamp (ختم جيباركو - الطرف الأول)</span>
+            <span id="fpStampStatus" class="text-[10px] text-slate-400 font-semibold">No stamp chosen</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 mb-2">
+            <input type="file" id="fpStampInput" accept="image/*" class="hidden">
+            <button type="button" onclick="document.getElementById('fpStampInput').click()" class="btn-blue text-[10.5px] py-1.5 px-3 flex items-center gap-1.5 shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Select Stamp from PC / اختر الختم من جهازك
+            </button>
+            <button type="button" id="fpRemoveStampBtn" class="hidden btn-ghost text-[10.5px] py-1.5 px-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                Remove Stamp / حذف
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 pt-2 border-t border-slate-200">
+            <label class="flex items-center gap-2 text-[11px] font-medium text-slate-700 cursor-pointer">
+                <input type="checkbox" id="fp_removeBg" checked class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+                <span>Remove White Background (شفاف مثل وورد)</span>
+            </label>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-slate-500 uppercase">Stamp Size:</span>
+                <input type="range" id="fp_stampHeight" min="40" max="75" value="55" class="w-24 h-1.5 bg-slate-200 rounded-lg cursor-pointer">
+                <span id="fp_sizeLabel" class="text-[10.5px] text-slate-600 font-semibold">55px</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECOND PARTY STAMP -->
+    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+        <div class="flex items-center justify-between mb-2">
+            <span class="font-bold text-xs text-slate-800">Second Party Stamp (ختم الطرف الثاني)</span>
+            <span id="spStampStatus" class="text-[10px] text-slate-400 font-semibold">No stamp chosen</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 mb-2">
+            <input type="file" id="spStampInput" accept="image/*" class="hidden">
+            <button type="button" onclick="document.getElementById('spStampInput').click()" class="btn-ghost text-[10.5px] py-1.5 px-3 flex items-center gap-1.5 text-slate-700 border-slate-300 hover:bg-slate-100 shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Select Stamp from PC / اختر ختم الطرف الثاني
+            </button>
+            <button type="button" id="spRemoveStampBtn" class="hidden btn-ghost text-[10.5px] py-1.5 px-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                Remove Stamp / حذف
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 pt-2 border-t border-slate-200">
+            <label class="flex items-center gap-2 text-[11px] font-medium text-slate-700 cursor-pointer">
+                <input type="checkbox" id="sp_removeBg" checked class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+                <span>Remove White Background (شفاف مثل وورد)</span>
+            </label>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-slate-500 uppercase">Stamp Size:</span>
+                <input type="range" id="sp_stampHeight" min="40" max="75" value="55" class="w-24 h-1.5 bg-slate-200 rounded-lg cursor-pointer">
+                <span id="sp_sizeLabel" class="text-[10.5px] text-slate-600 font-semibold">55px</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- GENERATE BUTTON -->
 <div class="mt-5 mb-8">
     <button type="button" id="generateBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 px-4 rounded-xl shadow-lg transition-all text-xs tracking-wider uppercase">
@@ -211,6 +282,118 @@ function loadDefaultData() {
 
     document.getElementById('termsContainer').innerHTML = '';
     DEFAULT_TERMS.forEach(t => addTermRow(t.en, t.ar));
+    updatePreview();
+}
+
+let fpStampRawImg = null;
+let fpStampProcessedData = '';
+let fpStampHeight = 55;
+
+let spStampRawImg = null;
+let spStampProcessedData = '';
+let spStampHeight = 55;
+
+function processImageWithTransparency(img, removeBg, threshold = 215) {
+    if (!img) return '';
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+
+    if (!removeBg) {
+        return canvas.toDataURL('image/png');
+    }
+
+    try {
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imgData.data;
+        const t = Number(threshold) || 215;
+
+        for (let i = 0; i < d.length; i += 4) {
+            const r = d[i];
+            const g = d[i+1];
+            const b = d[i+2];
+            const minVal = Math.min(r, g, b);
+            const maxVal = Math.max(r, g, b);
+            const diff = maxVal - minVal;
+
+            // When background is paper-like (near white or light neutral gray/cream)
+            if (minVal >= t && diff < 35) {
+                d[i+3] = 0; // 100% transparent
+            } else if (minVal >= (t - 25) && diff < 35) {
+                // Anti-aliased smooth edge
+                const alphaFactor = (t - minVal) / 25;
+                d[i+3] = Math.round(d[i+3] * alphaFactor);
+            }
+        }
+        ctx.putImageData(imgData, 0, 0);
+        return canvas.toDataURL('image/png');
+    } catch(err) {
+        console.error('Error processing stamp transparency', err);
+        return canvas.toDataURL('image/png');
+    }
+}
+
+function handleFPStampUpload(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            fpStampRawImg = img;
+            reprocessFPStamp();
+            const statusEl = document.getElementById('fpStampStatus');
+            if (statusEl) {
+                statusEl.textContent = file.name.length > 18 ? file.name.substring(0, 15) + '...' : file.name;
+                statusEl.className = 'text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300';
+            }
+            const removeBtn = document.getElementById('fpRemoveStampBtn');
+            if (removeBtn) removeBtn.classList.remove('hidden');
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function reprocessFPStamp() {
+    if (!fpStampRawImg) {
+        fpStampProcessedData = '';
+    } else {
+        const removeBg = document.getElementById('fp_removeBg') ? document.getElementById('fp_removeBg').checked : true;
+        fpStampProcessedData = processImageWithTransparency(fpStampRawImg, removeBg, 215);
+    }
+    updatePreview();
+}
+
+function handleSPStampUpload(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            spStampRawImg = img;
+            reprocessSPStamp();
+            const statusEl = document.getElementById('spStampStatus');
+            if (statusEl) {
+                statusEl.textContent = file.name.length > 18 ? file.name.substring(0, 15) + '...' : file.name;
+                statusEl.className = 'text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300';
+            }
+            const removeBtn = document.getElementById('spRemoveStampBtn');
+            if (removeBtn) removeBtn.classList.remove('hidden');
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function reprocessSPStamp() {
+    if (!spStampRawImg) {
+        spStampProcessedData = '';
+    } else {
+        const removeBg = document.getElementById('sp_removeBg') ? document.getElementById('sp_removeBg').checked : true;
+        spStampProcessedData = processImageWithTransparency(spStampRawImg, removeBg, 215);
+    }
     updatePreview();
 }
 
@@ -346,9 +529,12 @@ function updatePreview() {
                         <div style="background:#1e3a8a;color:#fff;font-size:9px;font-weight:700;padding:5px 8px;text-align:center;">
                             First Party / الطرف الأول
                         </div>
-                        <div style="padding:8px;">
-                            <div style="border:1.5px dashed #94a3b8;height:50px;border-radius:4px;display:flex;align-items:center;justify-content:center;">
-                                <span style="font-size:8px;color:#94a3b8;">STAMP / ختم</span>
+                        <div style="padding:8px;position:relative;">
+                            <div style="border:${fpStampProcessedData ? '1.5px dashed transparent' : '1.5px dashed #94a3b8'};height:${fpStampHeight}px;border-radius:4px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+                                ${fpStampProcessedData 
+                                    ? `<img src="${fpStampProcessedData}" style="max-height:${fpStampHeight}px;max-width:95%;object-fit:contain;mix-blend-mode:multiply;display:block;margin:auto;">` 
+                                    : `<span style="font-size:8px;color:#94a3b8;">STAMP / ختم</span>`
+                                }
                             </div>
                             <div style="border-bottom:1px solid #475569;margin:8px 0 3px;"></div>
                             <div style="font-size:7.5px;color:#64748b;text-align:center;">Signature / التوقيع</div>
@@ -361,9 +547,12 @@ function updatePreview() {
                         <div style="background:#1e3a8a;color:#fff;font-size:9px;font-weight:700;padding:5px 8px;text-align:center;">
                             Second Party / الطرف الثاني
                         </div>
-                        <div style="padding:8px;">
-                            <div style="border:1.5px dashed #94a3b8;height:50px;border-radius:4px;display:flex;align-items:center;justify-content:center;">
-                                <span style="font-size:8px;color:#94a3b8;">STAMP / ختم</span>
+                        <div style="padding:8px;position:relative;">
+                            <div style="border:${spStampProcessedData ? '1.5px dashed transparent' : '1.5px dashed #94a3b8'};height:${spStampHeight}px;border-radius:4px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+                                ${spStampProcessedData 
+                                    ? `<img src="${spStampProcessedData}" style="max-height:${spStampHeight}px;max-width:95%;object-fit:contain;mix-blend-mode:multiply;display:block;margin:auto;">` 
+                                    : `<span style="font-size:8px;color:#94a3b8;">STAMP / ختم</span>`
+                                }
                             </div>
                             <div style="border-bottom:1px solid #475569;margin:8px 0 3px;"></div>
                             <div style="font-size:7.5px;color:#64748b;text-align:center;">Signature / التوقيع</div>
@@ -396,14 +585,29 @@ function printPDF() {
     const contractNumber = document.getElementById('contractNumber').value || '250078';
     const element = document.getElementById('agreementPage');
     if (!element) { alert('Preview not loaded yet. Please wait.'); return; }
+
+    const prevShadow = element.style.boxShadow;
+    element.style.boxShadow = 'none';
+
     const opt = {
-        margin:      [0, 0, 0, 0],
-        filename:    'Service_Agreement_' + contractNumber + '.pdf',
-        image:       { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true, allowTaint: true },
-        jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        margin:       [0, 0, 0, 0],
+        filename:     'Service_Agreement_' + contractNumber + '.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, allowTaint: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-    html2pdf().set(opt).from(element).save();
+
+    html2pdf().set(opt).from(element).toPdf().get('pdf').then((pdf) => {
+        const total = pdf.internal.getNumberOfPages();
+        for (let p = total; p > 1; p--) {
+            pdf.deletePage(p);
+        }
+    }).save().then(() => {
+        element.style.boxShadow = prevShadow;
+    }).catch((err) => {
+        console.error('Error generating PDF:', err);
+        element.style.boxShadow = prevShadow;
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -419,6 +623,79 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('resetBtn').addEventListener('click', () => {
         if (confirm('Reset all fields to defaults?')) loadDefaultData();
     });
+
+    // Stamp controls event listeners
+    const fpStampInput = document.getElementById('fpStampInput');
+    if (fpStampInput) {
+        fpStampInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) handleFPStampUpload(e.target.files[0]);
+        });
+    }
+
+    const spStampInput = document.getElementById('spStampInput');
+    if (spStampInput) {
+        spStampInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) handleSPStampUpload(e.target.files[0]);
+        });
+    }
+
+    const fpRemoveBg = document.getElementById('fp_removeBg');
+    if (fpRemoveBg) fpRemoveBg.addEventListener('change', reprocessFPStamp);
+
+    const spRemoveBg = document.getElementById('sp_removeBg');
+    if (spRemoveBg) spRemoveBg.addEventListener('change', reprocessSPStamp);
+
+    const fpStampHeightSlider = document.getElementById('fp_stampHeight');
+    if (fpStampHeightSlider) {
+        fpStampHeightSlider.addEventListener('input', (e) => {
+            fpStampHeight = parseInt(e.target.value) || 55;
+            const lbl = document.getElementById('fp_sizeLabel');
+            if (lbl) lbl.textContent = fpStampHeight + 'px';
+            updatePreview();
+        });
+    }
+
+    const spStampHeightSlider = document.getElementById('sp_stampHeight');
+    if (spStampHeightSlider) {
+        spStampHeightSlider.addEventListener('input', (e) => {
+            spStampHeight = parseInt(e.target.value) || 55;
+            const lbl = document.getElementById('sp_sizeLabel');
+            if (lbl) lbl.textContent = spStampHeight + 'px';
+            updatePreview();
+        });
+    }
+
+    const fpRemoveBtn = document.getElementById('fpRemoveStampBtn');
+    if (fpRemoveBtn) {
+        fpRemoveBtn.addEventListener('click', () => {
+            fpStampRawImg = null;
+            fpStampProcessedData = '';
+            if (fpStampInput) fpStampInput.value = '';
+            const statusEl = document.getElementById('fpStampStatus');
+            if (statusEl) {
+                statusEl.textContent = 'No stamp chosen';
+                statusEl.className = 'text-[10px] text-slate-400 font-semibold';
+            }
+            fpRemoveBtn.classList.add('hidden');
+            updatePreview();
+        });
+    }
+
+    const spRemoveBtn = document.getElementById('spRemoveStampBtn');
+    if (spRemoveBtn) {
+        spRemoveBtn.addEventListener('click', () => {
+            spStampRawImg = null;
+            spStampProcessedData = '';
+            if (spStampInput) spStampInput.value = '';
+            const statusEl = document.getElementById('spStampStatus');
+            if (statusEl) {
+                statusEl.textContent = 'No stamp chosen';
+                statusEl.className = 'text-[10px] text-slate-400 font-semibold';
+            }
+            spRemoveBtn.classList.add('hidden');
+            updatePreview();
+        });
+    }
 });
 </script>
 </body>

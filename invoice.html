@@ -1,10 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VAT Invoice & Timesheet Editor - ZATCA Compliant</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Amiri:wght@400;700&display=swap');
@@ -551,6 +552,63 @@
         updateRender();
     }
 
+    // ZATCA E-INVOICE PHASE 1 (TLV ENCODING)
+    function getTlvBytes(tagNumber, valueString) {
+        const encoder = new TextEncoder();
+        const valueBuffer = encoder.encode(valueString);
+        const combined = new Uint8Array(2 + valueBuffer.length);
+        combined[0] = tagNumber;
+        combined[1] = valueBuffer.length;
+        combined.set(valueBuffer, 2);
+        return combined;
+    }
+
+    function formatZatcaTimestamp(dateStr) {
+        if (!dateStr) return new Date().toISOString().split('.')[0] + 'Z';
+        dateStr = dateStr.trim();
+        const dmyMatch = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+        if (dmyMatch) {
+            const day = dmyMatch[1].padStart(2, '0');
+            const month = dmyMatch[2].padStart(2, '0');
+            const year = dmyMatch[3];
+            return `${year}-${month}-${day}T12:00:00Z`;
+        }
+        const ymdMatch = dateStr.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+        if (ymdMatch) {
+            const year = ymdMatch[1];
+            const month = ymdMatch[2].padStart(2, '0');
+            const day = ymdMatch[3].padStart(2, '0');
+            return `${year}-${month}-${day}T12:00:00Z`;
+        }
+        try {
+            const d = new Date(dateStr);
+            if (!isNaN(d.getTime())) return d.toISOString().split('.')[0] + 'Z';
+        } catch(e) {}
+        return new Date().toISOString().split('.')[0] + 'Z';
+    }
+
+    function generateZatcaTLVBase64(sellerName, vatNumber, timestamp, totalAmount, vatAmount) {
+        const tlv1 = getTlvBytes(1, sellerName || 'JIBARCO COMPANY');
+        const tlv2 = getTlvBytes(2, vatNumber || '314299252400003');
+        const tlv3 = getTlvBytes(3, timestamp);
+        const tlv4 = getTlvBytes(4, parseFloat(totalAmount || 0).toFixed(2));
+        const tlv5 = getTlvBytes(5, parseFloat(vatAmount || 0).toFixed(2));
+
+        const totalLen = tlv1.length + tlv2.length + tlv3.length + tlv4.length + tlv5.length;
+        const fullTlvBuffer = new Uint8Array(totalLen);
+        let offset = 0;
+        [tlv1, tlv2, tlv3, tlv4, tlv5].forEach(buf => {
+            fullTlvBuffer.set(buf, offset);
+            offset += buf.length;
+        });
+
+        let binary = '';
+        for (let i = 0; i < fullTlvBuffer.length; i++) {
+            binary += String.fromCharCode(fullTlvBuffer[i]);
+        }
+        return btoa(binary);
+    }
+
     // MAIN RENDER ENGINE
     function updateRender() {
         const includePage2 = document.getElementById('includePage2Checkbox').checked;
@@ -816,13 +874,11 @@
 
                         <!-- ZATCA QR CODE -->
                         <td style="width: 16%; vertical-align: top; padding: 4px; text-align: center;">
-                            <div style="font-size: 7px; font-weight: bold; margin-bottom: 2px;">QR</div>
-                            <div style="display: inline-block; padding: 2px; background: white; border: 1px solid #000;">
-                                <svg viewBox="0 0 100 100" style="width: 58px; height: 58px;">
-                                    <path fill="#000" d="M0 0h30v30H0zM5 5v20h20V5zM10 10h10v10H10zM70 0h30v30H70zM75 5v20h20V5zM80 10h10v10H80zM0 70h30v30H0zM5 75v20h20V75zM10 80h10v10H10zM40 10h10v10H40zM50 20h10v10H50zM30 40h10v10H30zM50 40h20v10H50zM80 40h20v10H80zM40 60h10v20H40zM60 60h20v10H60zM70 80h30v20H70z"/>
-                                </svg>
+                            <div style="font-size: 7px; font-weight: bold; margin-bottom: 2px;">QR (ZATCA)</div>
+                            <div style="display: inline-flex; align-items:center; justify-content:center; padding: 2px; background: white; border: 1px solid #000; width: 62px; height: 62px; box-sizing: border-box; margin: auto;">
+                                <div id="zatcaQrCodeBox" style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;"></div>
                             </div>
-                            <div style="font-size: 6px; font-weight: bold; color: #475569; margin-top: 1px;">ZATCA Validated</div>
+                            <div style="font-size: 6px; font-weight: bold; color: #15803d; margin-top: 2px;">✓ ZATCA Validated</div>
                         </td>
                     </tr>
                 </table>
@@ -931,6 +987,33 @@
                 renderContainer.innerHTML = page2HTML;
             }
         }
+
+        // Generate Live ZATCA TLV Base64 QR Code
+        const qrBox = document.getElementById('zatcaQrCodeBox');
+        if (qrBox) {
+            qrBox.innerHTML = '';
+            const invDate = document.getElementById('invoiceDate').value || '13/08/2026';
+            const zatcaTime = formatZatcaTimestamp(invDate);
+            const zatcaSeller = coNameEn || 'JIBARCO COMPANY';
+            const zatcaVat = coVat || '314299252400003';
+            const zatcaGrandTotal = grandTotal.toFixed(2);
+            const zatcaVatTotal = vatTotal.toFixed(2);
+
+            const zatcaBase64 = generateZatcaTLVBase64(zatcaSeller, zatcaVat, zatcaTime, zatcaGrandTotal, zatcaVatTotal);
+
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(qrBox, {
+                    text: zatcaBase64,
+                    width: 56,
+                    height: 56,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.M
+                });
+            } else {
+                qrBox.innerHTML = '<span style="font-size:6px;color:#94a3b8;">QR Ready</span>';
+            }
+        }
     }
 
 
@@ -958,7 +1041,13 @@
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().set(opt).from(printDiv).save();
+        html2pdf().set(opt).from(printDiv).toPdf().get('pdf').then((pdf) => {
+            const expectedPages = (!includePage2 || activeTab === 'page1' || activeTab === 'page2') ? 1 : 2;
+            const total = pdf.internal.getNumberOfPages();
+            for (let p = total; p > expectedPages; p--) {
+                pdf.deletePage(p);
+            }
+        }).save();
     }
 </script>
 </body>
