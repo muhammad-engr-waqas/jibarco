@@ -131,6 +131,91 @@
             border: 1px solid #000000;
             border-collapse: collapse;
         }
+
+        /* QR Code Container & Media Styling */
+        #zatcaQrCodeBox {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+        }
+
+        #zatcaQrCodeBox canvas,
+        #zatcaQrCodeBox img {
+            width: 56px !important;
+            height: 56px !important;
+            max-width: 56px !important;
+            max-height: 56px !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: pixelated;
+            margin: 0 auto !important;
+        }
+
+        /* Print Media Styles */
+        @media print {
+            @page { margin: 0; size: A4 portrait; }
+
+            body > *:not(#__printArea__) {
+                display: none !important;
+            }
+
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+            }
+
+            #__printArea__ {
+                display: block !important;
+                position: static !important;
+                width: 210mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+            }
+
+            .pdf-page {
+                display: block !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 10mm 10mm !important;
+                width: 210mm !important;
+                min-height: 297mm !important;
+                background: white !important;
+                color: black !important;
+            }
+
+            .pdf-page + .pdf-page {
+                page-break-before: always !important;
+                break-before: page !important;
+            }
+
+            .pdf-page:last-child {
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+            }
+
+            #zatcaQrCodeBox {
+                display: flex !important;
+                visibility: visible !important;
+                overflow: visible !important;
+            }
+
+            #zatcaQrCodeBox img {
+                width: 56px !important;
+                height: 56px !important;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                image-rendering: pixelated !important;
+                margin: 0 auto !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1010,44 +1095,258 @@
                     colorLight : "#ffffff",
                     correctLevel : QRCode.CorrectLevel.M
                 });
+
+                // qrcode.js renders the canvas asynchronously via setTimeout(0).
+                // Poll until the canvas has pixel data, then freeze it as an <img>.
+                waitForQrCanvas(qrBox, 700).then(canvas => {
+                    if (canvas) {
+                        try {
+                            const url = canvas.toDataURL('image/png');
+                            if (url && url.length > 100) {
+                                setQrBoxToImg(qrBox, url);
+                            }
+                        } catch(e) {
+                            console.warn('QR canvas toDataURL in updateRender failed:', e);
+                        }
+                    }
+                });
             } else {
                 qrBox.innerHTML = '<span style="font-size:6px;color:#94a3b8;">QR Ready</span>';
             }
         }
     }
 
+    // ─── QR UTILITY: poll a QR box until the canvas is painted, then convert to <img> ───
+    // qrcode.js renders its canvas on a setTimeout(0) inside the library, so we
+    // cannot rely on the canvas being ready synchronously after `new QRCode(...)`.
+    // We poll every 30 ms for up to 600 ms, then give up gracefully.
+    function waitForQrCanvas(box, timeoutMs) {
+        return new Promise(resolve => {
+            if (!box) { resolve(null); return; }
+            const deadline = Date.now() + (timeoutMs || 600);
+            function check() {
+                const canvas = box.querySelector('canvas');
+                if (canvas) {
+                    // Extra guard: a freshly-created canvas may have width/height but
+                    // the pixel data may still be blank (all zeros). Check a pixel.
+                    try {
+                        const ctx = canvas.getContext('2d');
+                        const px  = ctx.getImageData(0, 0, 1, 1).data;
+                        // If at least one channel is non-zero the canvas has been painted
+                        if (px[0] !== 0 || px[1] !== 0 || px[2] !== 0 || px[3] !== 0) {
+                            resolve(canvas);
+                            return;
+                        }
+                    } catch(e) {
+                        // cross-origin taint — fall through and try toDataURL directly
+                        resolve(canvas);
+                        return;
+                    }
+                }
+                if (Date.now() >= deadline) { resolve(null); return; }
+                setTimeout(check, 30);
+            }
+            check();
+        });
+    }
 
-    function printPDF() {
+    // Convert whatever is inside `box` (canvas or img) into a data-URL string.
+    // Returns null on failure.
+    function extractQrDataUrl(box) {
+        if (!box) return null;
+        // Already converted to <img data:…> — just return the src
+        const img = box.querySelector('img');
+        if (img && img.src && img.src.startsWith('data:')) return img.src;
+        // Try canvas
+        const canvas = box.querySelector('canvas');
+        if (canvas) {
+            try {
+                const url = canvas.toDataURL('image/png');
+                if (url && url.length > 100) return url;
+            } catch(e) {}
+        }
+        return null;
+    }
+
+    // Replace the contents of `box` with a static <img> whose src is the data-URL.
+    function setQrBoxToImg(box, dataUrl) {
+        if (!box || !dataUrl) return;
+        box.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.alt = 'ZATCA QR Code';
+        img.style.cssText =
+            'width:56px;height:56px;display:block;visibility:visible;' +
+            'opacity:1;margin:0 auto;image-rendering:pixelated;' +
+            'image-rendering:-webkit-optimize-contrast;';
+        box.appendChild(img);
+    }
+
+    // ─── Generate a FRESH QR data-URL off-screen, completely independent of the
+    //     live preview canvas.  This is the most reliable approach for PDF export. ───
+    function generateFreshQrDataUrl(zatcaBase64) {
+        return new Promise(resolve => {
+            if (typeof QRCode === 'undefined') { resolve(null); return; }
+
+            // Create an off-screen container (not attached to DOM so it won't flash)
+            const offscreen = document.createElement('div');
+            offscreen.style.cssText =
+                'position:fixed;left:-9999px;top:-9999px;width:56px;height:56px;' +
+                'visibility:hidden;pointer-events:none;';
+            document.body.appendChild(offscreen);
+
+            try {
+                new QRCode(offscreen, {
+                    text: zatcaBase64,
+                    width: 128,    // render at higher res for better PDF quality
+                    height: 128,
+                    colorDark : '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            } catch(e) {
+                document.body.removeChild(offscreen);
+                resolve(null);
+                return;
+            }
+
+            // Poll until the canvas is painted
+            waitForQrCanvas(offscreen, 800).then(canvas => {
+                let dataUrl = null;
+                if (canvas) {
+                    try { dataUrl = canvas.toDataURL('image/png'); } catch(e) {}
+                }
+                try { document.body.removeChild(offscreen); } catch(e) {}
+                resolve(dataUrl && dataUrl.length > 100 ? dataUrl : null);
+            });
+        });
+    }
+
+    async function printPDF() {
         const includePage2 = document.getElementById('includePage2Checkbox').checked;
-        const invNo = document.getElementById('invoiceNo').value || 'Invoice';
+        const invNo        = document.getElementById('invoiceNo').value || 'Invoice';
 
+        // ── 1. Generate fresh QR and inject into live QR box ─────────────────────
+        const coNameEnVal = (document.getElementById('coNameEn').value || 'JIBARCO COMPANY').trim();
+        const coVatVal    = (document.getElementById('coVat').value    || '314299252400003').trim();
+        const invDateVal  = (document.getElementById('invoiceDate').value || '').trim();
+        const zatcaTime   = formatZatcaTimestamp(invDateVal);
 
-        const printDiv = document.createElement('div');
-        printDiv.style.width = '210mm';
+        let sub = 0;
+        document.querySelectorAll('.line-item-row').forEach(function(row) {
+            sub += (parseFloat(row.querySelector('.item-qty').value)   || 0) *
+                   (parseFloat(row.querySelector('.item-price').value) || 0);
+        });
+        const vatAmt   = sub * 0.15;
+        const totalAmt = sub + vatAmt;
 
-        if (activeTab === 'page1' || !includePage2) {
-            printDiv.innerHTML = document.getElementById('pdfPage1').outerHTML;
-        } else if (activeTab === 'page2') {
-            printDiv.innerHTML = document.getElementById('pdfPage2').outerHTML;
-        } else {
-            printDiv.innerHTML = document.getElementById('pdfPage1').outerHTML + (document.getElementById('pdfPage2') ? document.getElementById('pdfPage2').outerHTML : '');
+        const tlvB64   = generateZatcaTLVBase64(coNameEnVal, coVatVal, zatcaTime,
+                             totalAmt.toFixed(2), vatAmt.toFixed(2));
+        const qrDataUrl = await generateFreshQrDataUrl(tlvB64);
+
+        // Inject QR as <img> into the live box so print CSS captures it
+        var liveQrBox = document.getElementById('zatcaQrCodeBox');
+        if (liveQrBox) {
+            liveQrBox.innerHTML = '';
+            if (qrDataUrl) {
+                var qi = document.createElement('img');
+                qi.src              = qrDataUrl;
+                qi.alt              = 'ZATCA QR';
+                qi.style.width      = '56px';
+                qi.style.height     = '56px';
+                qi.style.display    = 'block';
+                qi.style.visibility = 'visible';
+                qi.style.opacity    = '1';
+                qi.style.margin     = '0 auto';
+                liveQrBox.appendChild(qi);
+            }
         }
 
-        const opt = {
-            margin:       0,
-            filename:     `VAT_Invoice_${invNo}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+        // Convert any leftover canvas → img
+        ['pdfPage1','pdfPage2'].forEach(function(id) {
+            var pg = document.getElementById(id);
+            if (!pg) return;
+            pg.querySelectorAll('canvas').forEach(function(cvs) {
+                try {
+                    var ci = document.createElement('img');
+                    ci.src = cvs.toDataURL('image/png');
+                    ci.style.cssText = 'width:56px;height:56px;display:block;margin:0 auto;';
+                    cvs.parentNode.replaceChild(ci, cvs);
+                } catch(e) { cvs.remove(); }
+            });
+        });
 
-        html2pdf().set(opt).from(printDiv).toPdf().get('pdf').then((pdf) => {
-            const expectedPages = (!includePage2 || activeTab === 'page1' || activeTab === 'page2') ? 1 : 2;
-            const total = pdf.internal.getNumberOfPages();
-            for (let p = total; p > expectedPages; p--) {
-                pdf.deletePage(p);
-            }
-        }).save();
+        // ── 2. Build the hidden #__printArea__ div at body level ─────────────────
+        // Remove any leftover one first
+        var old = document.getElementById('__printArea__');
+        if (old) old.parentNode.removeChild(old);
+
+        var printArea = document.createElement('div');
+        printArea.id  = '__printArea__';
+        // Hidden on screen (off-left), shown only via @media print CSS
+        printArea.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;background:white;';
+
+        var p1 = document.getElementById('pdfPage1');
+        var p2 = document.getElementById('pdfPage2');
+
+        if (!p1) {
+            alert('Preview not loaded yet. Please wait a moment and try again.');
+            return;
+        }
+
+        // Deep-clone so the live preview is untouched
+        if (activeTab === 'page2' && p2) {
+            printArea.appendChild(p2.cloneNode(true));
+        } else if (!includePage2 || activeTab === 'page1' || !p2) {
+            printArea.appendChild(p1.cloneNode(true));
+        } else {
+            printArea.appendChild(p1.cloneNode(true));
+            printArea.appendChild(p2.cloneNode(true));
+        }
+
+        // Re-inject QR into the clone (cloneNode carries the <img> we just set)
+        // Double-check and overwrite to be 100% sure
+        var cloneQrBox = printArea.querySelector('#zatcaQrCodeBox');
+        if (cloneQrBox && qrDataUrl) {
+            cloneQrBox.innerHTML = '';
+            var cqi = document.createElement('img');
+            cqi.src              = qrDataUrl;
+            cqi.alt              = 'ZATCA QR';
+            cqi.style.width      = '56px';
+            cqi.style.height     = '56px';
+            cqi.style.display    = 'block';
+            cqi.style.visibility = 'visible';
+            cqi.style.opacity    = '1';
+            cqi.style.margin     = '0 auto';
+            cloneQrBox.appendChild(cqi);
+        }
+
+        document.body.appendChild(printArea);
+
+        // ── 3. Wait for clone's images to decode, then print ─────────────────────
+        var cloneImgs = Array.from(printArea.querySelectorAll('img'));
+        await Promise.all(cloneImgs.map(function(img) {
+            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+            return new Promise(function(res) {
+                img.onload  = res;
+                img.onerror = res;
+                setTimeout(res, 1500);
+            });
+        }));
+
+        // One frame settle
+        await new Promise(function(res) {
+            requestAnimationFrame(function() { requestAnimationFrame(res); });
+        });
+
+        // ── 4. Print — browser handles "Save as PDF" natively ────────────────────
+        window.print();
+
+        // ── 5. Clean up after print dialog closes ────────────────────────────────
+        setTimeout(function() {
+            var pa = document.getElementById('__printArea__');
+            if (pa) pa.parentNode.removeChild(pa);
+        }, 1000);
     }
 </script>
 </body>
