@@ -266,7 +266,7 @@
                             </div>
                             <div>
                                 <label class="form-label">COMPANY VAT NO</label>
-                                <input type="text" id="coVat" class="form-input" value="314299252400003">
+                                <input type="text" id="coVat" class="form-input" value="315035698500003">
                             </div>
                         </div>
                         <div class="mb-3">
@@ -375,7 +375,7 @@
                             </div>
                             <div>
                                 <label class="form-label">VAT NUMBER</label>
-                                <input type="text" id="buyerVat" class="form-input" value="314299252400003">
+                                <input type="text" id="buyerVat" class="form-input" value="315035698500003">
                             </div>
                         </div>
                     </div>
@@ -674,7 +674,7 @@
 
     function generateZatcaTLVBase64(sellerName, vatNumber, timestamp, totalAmount, vatAmount) {
         const tlv1 = getTlvBytes(1, sellerName || 'JIBARCO COMPANY');
-        const tlv2 = getTlvBytes(2, vatNumber || '314299252400003');
+        const tlv2 = getTlvBytes(2, vatNumber || '315035698500003');
         const tlv3 = getTlvBytes(3, timestamp);
         const tlv4 = getTlvBytes(4, parseFloat(totalAmount || 0).toFixed(2));
         const tlv5 = getTlvBytes(5, parseFloat(vatAmount || 0).toFixed(2));
@@ -703,7 +703,7 @@
         const coNameAr = document.getElementById('coNameAr').value || 'شركة جيباركو';
         const coSubTitle = document.getElementById('coSubTitle').value || 'CONTRACTING COMPANY LLC · KSA';
         const coCr = document.getElementById('coCr').value || '7052038558';
-        const coVat = document.getElementById('coVat').value || '314299252400003';
+        const coVat = document.getElementById('coVat').value || '315035698500003';
         const coAddress = document.getElementById('coAddress').value || 'King Abdullah 11th Street, Al Khobar Al Shamalia, KSA';
         const coPhone = document.getElementById('coPhone').value || '+966597337289';
 
@@ -1080,7 +1080,7 @@
             const invDate = document.getElementById('invoiceDate').value || '13/08/2026';
             const zatcaTime = formatZatcaTimestamp(invDate);
             const zatcaSeller = coNameEn || 'JIBARCO COMPANY';
-            const zatcaVat = coVat || '314299252400003';
+            const zatcaVat = coVat || '315035698500003';
             const zatcaGrandTotal = grandTotal.toFixed(2);
             const zatcaVatTotal = vatTotal.toFixed(2);
 
@@ -1228,7 +1228,7 @@
 
         // ── 1. Generate fresh QR and inject into live QR box ─────────────────────
         const coNameEnVal = (document.getElementById('coNameEn').value || 'JIBARCO COMPANY').trim();
-        const coVatVal    = (document.getElementById('coVat').value    || '314299252400003').trim();
+        const coVatVal    = (document.getElementById('coVat').value    || '315035698500003').trim();
         const invDateVal  = (document.getElementById('invoiceDate').value || '').trim();
         const zatcaTime   = formatZatcaTimestamp(invDateVal);
 
