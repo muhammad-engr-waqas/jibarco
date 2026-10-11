@@ -5,18 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Management - JIBARCO PORTAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Amiri:wght@400;700&display=swap');
         body { font-family: 'Inter', sans-serif; background: #f8fafc; }
         .arabic-text { font-family: 'Amiri', serif; }
+        
+        .excel-cell-input {
+            width: 100%;
+            padding: 6px 9px;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #0f172a;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+        .excel-cell-input:focus {
+            border-color: #059669;
+            box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.18);
+            background-color: #ffffff;
+        }
+
+        .print-only { display: none; }
+
         @media print {
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            body { background: white !important; p: 0; }
+            /* Hide absolutely everything by default */
+            body > * { display: none !important; }
+            /* Then show ONLY the official print document */
+            #officialPrintDocument { display: block !important; }
+            body { background: white !important; padding: 0 !important; margin: 0 !important; color: black !important; }
+            @page {
+                size: A4 portrait;
+                margin: 8mm 12mm 10mm 12mm;
+            }
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between text-slate-800">
+
+    <!-- Global Datalists for Autocomplete in Excel Row and Modal -->
+    <datalist id="nationalityList">
+        <option value="Saudi Arabia">
+        <option value="Pakistan">
+        <option value="India">
+        <option value="Egypt">
+        <option value="Philippines">
+        <option value="Bangladesh">
+        <option value="Yemen">
+        <option value="Sudan">
+        <option value="Nepal">
+        <option value="Jordan">
+        <option value="Syria">
+    </datalist>
+
+    <datalist id="professionList">
+        <option value="Project Manager">
+        <option value="Civil Engineer">
+        <option value="Mechanical Engineer">
+        <option value="Electrical Engineer">
+        <option value="Safety Officer (HSE)">
+        <option value="Site Supervisor">
+        <option value="Pipe Fitter">
+        <option value="6G Welder">
+        <option value="Scaffolder">
+        <option value="Electrician">
+        <option value="Heavy Equipment Driver">
+        <option value="General Laborer">
+        <option value="Accountant">
+    </datalist>
 
     <!-- Top Navigation Bar -->
     <header class="no-print bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-sm">
@@ -68,7 +127,7 @@
     <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
 
         <!-- Page Header Banner -->
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
             <div>
                 <h1 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                     <span>Employee Management</span>
@@ -78,18 +137,76 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2 no-print">
-                <button onclick="openAddModal()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition-all">
+                <!-- Add Row (Excel Fast Entry) -->
+                <button onclick="focusInlineRow()" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition-all" title="Add Row directly in table (Alt+N)">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                    <span>Add New Employee</span>
+                    <span>+ Add Row</span>
                 </button>
-                <button onclick="exportToCSV()" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2.5 rounded-xl border border-slate-200 shadow-sm transition-all" title="Export to Excel / CSV">
-                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    <span>Export CSV</span>
+
+                <!-- Modal form button -->
+                <button onclick="openAddModal()" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 shadow-sm transition-all" title="Open Modal Form">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+                    <span>Modal Form</span>
                 </button>
-                <button onclick="window.print()" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2.5 rounded-xl border border-slate-200 shadow-sm transition-all" title="Print List">
-                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                    <span>Print</span>
+
+                <!-- Export Excel button -->
+                <button onclick="exportToExcel()" id="btnExportExcel" class="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs px-3.5 py-2.5 rounded-xl border border-emerald-200 shadow-sm transition-all" title="Download Official Excel File (.xlsx) with Logo, Yellow Header & Golden Columns">
+                    <svg id="excelIcon" class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <div id="excelSpinner" class="hidden w-3.5 h-3.5 border-2 border-emerald-700 border-t-transparent rounded-full animate-spin"></div>
+                    <span id="excelBtnText">Export Excel (.xlsx)</span>
                 </button>
+
+                <!-- Print button -->
+                <button onclick="openPrintModal()" class="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-black text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all" title="Print Official Worker List">
+                    <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    <span>Print List</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dynamic Project Heading & Print Configuration Bar -->
+        <div class="bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-4 sm:p-4.5 mb-6 shadow-sm no-print">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-lg shadow-sm flex-shrink-0">
+                        📋
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-xs font-black text-slate-900 uppercase tracking-wider">Dynamic Project Heading & Format</h2>
+                            <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300">Live Update</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 mt-0.5">Heading updates automatically in both the <strong>Print Document</strong> and <strong>Excel (.xlsx)</strong> export!</p>
+                    </div>
+                </div>
+
+                <div class="flex-1 max-w-xl">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="text-amber-800 font-extrabold text-[11px] uppercase tracking-wide">HEADING:</span>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="dynamicProjectHeading" 
+                            value="JIBARCO WORKER LIST FOR JUBAIL PROJECT"
+                            oninput="syncProjectHeading(this.value)"
+                            placeholder="e.g. JIBARCO WORKER LIST FOR JUBAIL PROJECT..."
+                            class="w-full pl-20 pr-4 py-2.5 bg-yellow-200/90 hover:bg-yellow-200 focus:bg-yellow-100 text-black font-black text-xs sm:text-sm tracking-wide rounded-xl border-2 border-black focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm uppercase placeholder:font-normal placeholder:text-slate-400 transition-all"
+                            title="Edit project name dynamically for different projects"
+                        >
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <button onclick="openPrintModal()" class="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-black text-white font-bold text-xs px-3.5 py-2.5 rounded-xl shadow transition-all" title="Preview & Print Official Worker List">
+                        <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                        <span>Print</span>
+                    </button>
+                    <button onclick="exportToExcel()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl shadow transition-all" title="Export matching Excel file">
+                        <svg class="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span>Excel</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -166,24 +283,130 @@
             </div>
         </div>
 
-        <!-- Employees Table Container -->
+        <!-- Employees Table Container with Excel Entry Row -->
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            
+            <!-- Excel Mode Header Banner -->
+            <div class="bg-emerald-50/80 border-b border-emerald-100 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 no-print">
+                <div class="flex items-center gap-2 text-xs font-semibold text-emerald-900">
+                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-md bg-emerald-600 text-white font-bold text-xs">＋</span>
+                    <span><strong>Excel Quick-Entry Row:</strong> Type details directly into the row below and press <kbd class="px-1.5 py-0.5 bg-white border border-emerald-200 rounded text-[10px] font-mono font-bold text-emerald-800 shadow-xs">Enter</kbd> to save instantly!</span>
+                </div>
+                <div class="flex items-center gap-2 text-[11px] text-emerald-700 font-medium">
+                    <span>Press <kbd class="px-1.5 py-0.5 bg-white border border-emerald-200 rounded text-[10px] font-mono font-bold">Tab</kbd> to move across cells</span>
+                    <span class="text-emerald-300">|</span>
+                    <button onclick="focusInlineRow()" class="font-bold underline hover:text-emerald-900">+ Add Row</button>
+                </div>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                            <th class="py-3.5 px-4">#</th>
-                            <th class="py-3.5 px-4">Employee Name</th>
-                            <th class="py-3.5 px-4">Iqama / ID Number</th>
-                            <th class="py-3.5 px-4">Nationality</th>
-                            <th class="py-3.5 px-4">Profession</th>
-                            <th class="py-3.5 px-4">Phone Number</th>
-                            <th class="py-3.5 px-4">Status</th>
-                            <th class="py-3.5 px-4 text-right no-print">Actions</th>
+                        <tr class="bg-slate-50/90 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="py-3.5 px-3 text-center w-12">#</th>
+                            <th class="py-3.5 px-3 min-w-[180px]">Employee Name</th>
+                            <th class="py-3.5 px-3 min-w-[140px]">Iqama / ID Number</th>
+                            <th class="py-3.5 px-3 min-w-[130px]">Nationality</th>
+                            <th class="py-3.5 px-3 min-w-[140px]">Profession</th>
+                            <th class="py-3.5 px-3 min-w-[130px]">Phone Number</th>
+                            <th class="py-3.5 px-3 min-w-[110px]">Status</th>
+                            <th class="py-3.5 px-3 text-right no-print min-w-[110px]">Actions</th>
                         </tr>
                     </thead>
+
+                    <!-- EXCEL INLINE FAST-ENTRY ROW -->
+                    <tbody id="inlineAddTbody" class="bg-emerald-50/40 border-b-2 border-emerald-300 no-print">
+                        <tr id="inlineAddRow" class="hover:bg-emerald-50/80 transition-colors">
+                            <td class="py-2.5 px-3 text-center">
+                                <span class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-emerald-600 text-white font-black text-xs shadow-sm">＋</span>
+                            </td>
+                            <td class="py-2 px-2">
+                                <input 
+                                    type="text" 
+                                    id="rowName" 
+                                    placeholder="Full Name (الاسم)..." 
+                                    onkeydown="handleInlineRowKeyDown(event)"
+                                    class="excel-cell-input placeholder:font-normal placeholder:text-slate-400"
+                                >
+                            </td>
+                            <td class="py-2 px-2">
+                                <input 
+                                    type="text" 
+                                    id="rowIqama" 
+                                    placeholder="Iqama (رقم الإقامة)..." 
+                                    maxlength="15"
+                                    onkeydown="handleInlineRowKeyDown(event)"
+                                    class="excel-cell-input font-mono placeholder:font-normal placeholder:text-slate-400"
+                                >
+                            </td>
+                            <td class="py-2 px-2">
+                                <input 
+                                    type="text" 
+                                    id="rowNationality" 
+                                    list="nationalityList" 
+                                    placeholder="Nationality (الجنسية)..." 
+                                    onkeydown="handleInlineRowKeyDown(event)"
+                                    class="excel-cell-input placeholder:font-normal placeholder:text-slate-400"
+                                >
+                            </td>
+                            <td class="py-2 px-2">
+                                <input 
+                                    type="text" 
+                                    id="rowProfession" 
+                                    list="professionList" 
+                                    placeholder="Profession (المهنة)..." 
+                                    onkeydown="handleInlineRowKeyDown(event)"
+                                    class="excel-cell-input placeholder:font-normal placeholder:text-slate-400"
+                                >
+                            </td>
+                            <td class="py-2 px-2">
+                                <input 
+                                    type="text" 
+                                    id="rowPhone" 
+                                    placeholder="Phone (الجوال)..." 
+                                    onkeydown="handleInlineRowKeyDown(event)"
+                                    class="excel-cell-input placeholder:font-normal placeholder:text-slate-400"
+                                >
+                            </td>
+                            <td class="py-2 px-2">
+                                <select 
+                                    id="rowStatus" 
+                                    onkeydown="handleInlineRowKeyDown(event)"
+                                    class="excel-cell-input font-semibold text-slate-800"
+                                >
+                                    <option value="Active">Active</option>
+                                    <option value="On Leave">On Leave</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </td>
+                            <td class="py-2 px-3 text-right">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button 
+                                        type="button" 
+                                        id="btnSaveInlineRow"
+                                        onclick="saveInlineRow()" 
+                                        class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all"
+                                        title="Save Row (Press Enter)"
+                                    >
+                                        <svg id="saveInlineIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        <div id="saveInlineSpinner" class="hidden w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        <span id="saveInlineText">Save</span>
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        onclick="clearInlineRow()" 
+                                        class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors"
+                                        title="Clear row inputs"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+
+                    <!-- MAIN EMPLOYEES TABLE BODY -->
                     <tbody id="employeesTableBody" class="divide-y divide-slate-100 text-xs">
-                        <!-- Rendered dynamically -->
                         <tr>
                             <td colspan="8" class="text-center py-12 text-slate-400">
                                 <div class="flex flex-col items-center justify-center">
@@ -196,16 +419,16 @@
                 </table>
             </div>
 
-            <!-- Empty State Container (Hidden by default) -->
+            <!-- Empty State Container -->
             <div id="emptyState" class="hidden text-center py-16 px-4">
                 <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
                 </div>
                 <h3 class="text-base font-bold text-slate-800 mb-1">No Employees Found</h3>
-                <p class="text-xs text-slate-500 max-w-sm mx-auto mb-5">There are no employee records matching your query or added yet. Click below to add your first employee.</p>
-                <button onclick="openAddModal()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all">
+                <p class="text-xs text-slate-500 max-w-sm mx-auto mb-5">Type details in the green row above to add your first employee, or click below.</p>
+                <button onclick="focusInlineRow()" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                    <span>Add New Employee</span>
+                    <span>Start Typing in Excel Row</span>
                 </button>
             </div>
         </div>
@@ -217,15 +440,13 @@
         JIBARCO COMPANY · The Southern Al-Khobar, Darin Street · faisal.salem@jibarco.com
     </footer>
 
-    <!-- ADD / EDIT EMPLOYEE MODAL -->
+    <!-- ADD / EDIT EMPLOYEE MODAL (Optional Alternative) -->
     <div id="employeeModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modalTitle" role="dialog" aria-modal="true">
-        <!-- Backdrop -->
         <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
 
         <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
             <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-slate-100">
                 
-                <!-- Modal Header -->
                 <div class="bg-gradient-to-r from-blue-700 to-indigo-700 px-6 py-5 text-white flex items-center justify-between">
                     <div>
                         <h3 id="modalTitle" class="text-base font-bold tracking-tight">Add New Employee</h3>
@@ -236,11 +457,9 @@
                     </button>
                 </div>
 
-                <!-- Modal Form -->
                 <form id="employeeForm" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4">
                     <input type="hidden" id="employeeId" value="">
 
-                    <!-- Name Field -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="fieldName">
                             Full Name <span class="text-rose-500">*</span> <span class="text-[10px] font-normal text-slate-400">(الاسم الكامل)</span>
@@ -254,7 +473,6 @@
                         >
                     </div>
 
-                    <!-- Iqama Field -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="fieldIqama">
                             Iqama / National ID <span class="text-rose-500">*</span> <span class="text-[10px] font-normal text-slate-400">(رقم الإقامة)</span>
@@ -269,7 +487,6 @@
                         >
                     </div>
 
-                    <!-- Nationality and Profession (2 columns) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="fieldNationality">
@@ -283,19 +500,6 @@
                                 placeholder="e.g. Pakistani / Saudi" 
                                 class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
                             >
-                            <datalist id="nationalityList">
-                                <option value="Saudi Arabia">
-                                <option value="Pakistan">
-                                <option value="India">
-                                <option value="Egypt">
-                                <option value="Philippines">
-                                <option value="Bangladesh">
-                                <option value="Yemen">
-                                <option value="Sudan">
-                                <option value="Nepal">
-                                <option value="Jordan">
-                                <option value="Syria">
-                            </datalist>
                         </div>
 
                         <div>
@@ -310,25 +514,9 @@
                                 placeholder="e.g. Civil Engineer / Welder" 
                                 class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
                             >
-                            <datalist id="professionList">
-                                <option value="Project Manager">
-                                <option value="Civil Engineer">
-                                <option value="Mechanical Engineer">
-                                <option value="Electrical Engineer">
-                                <option value="Safety Officer (HSE)">
-                                <option value="Site Supervisor">
-                                <option value="Pipe Fitter">
-                                <option value="6G Welder">
-                                <option value="Scaffolder">
-                                <option value="Electrician">
-                                <option value="Heavy Equipment Driver">
-                                <option value="General Laborer">
-                                <option value="Accountant">
-                            </datalist>
                         </div>
                     </div>
 
-                    <!-- Phone Number and Status (2 columns) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" for="fieldPhone">
@@ -358,10 +546,8 @@
                         </div>
                     </div>
 
-                    <!-- Error Alert Box inside Modal -->
                     <div id="modalAlert" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium"></div>
 
-                    <!-- Action Buttons -->
                     <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                         <button 
                             type="button" 
@@ -418,10 +604,126 @@
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-xs font-bold"></div>
 
+    <!-- PRINT PREVIEW / CUSTOMIZE MODAL -->
+    <div id="printModal" class="fixed inset-0 z-[60] hidden overflow-y-auto no-print" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closePrintModal()"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden">
+                <!-- Modal Header -->
+                <div class="bg-slate-900 px-6 py-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-yellow-400 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Print Official Worker List</h3>
+                            <p class="text-[10px] text-slate-400">Customize coordinator info before printing</p>
+                        </div>
+                    </div>
+                    <button onclick="closePrintModal()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="p-6 space-y-4">
+                    <!-- Dynamic Heading Preview -->
+                    <div class="bg-yellow-100 border-2 border-black rounded-xl p-3 text-center">
+                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Document Heading Preview</div>
+                        <div id="printModalHeadingPreview" class="text-sm font-black text-black uppercase tracking-widest leading-tight"></div>
+                    </div>
+
+                    <!-- Coordinator Fields -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Coordinator Name</label>
+                            <input type="text" id="printCoordName" value="HASSAN" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Title</label>
+                            <input type="text" id="printCoordTitle" value="MANAGER" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Mobile</label>
+                            <input type="text" id="printCoordMobile" value="0536168183" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Email</label>
+                            <input type="text" id="printCoordEmail" value="Hassan@jibarco.com" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 rounded-xl p-3 text-[11px] text-blue-700 font-medium border border-blue-100">
+                        <strong>Total records to print:</strong> <span id="printRecordCount">0</span> employees
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+                        <button onclick="closePrintModal()" class="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all">Cancel</button>
+                        <button onclick="executePrint()" class="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-xl shadow transition-all">
+                            <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                            Print Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OFFICIAL PRINT DOCUMENT (only visible when printing) -->
+    <div id="officialPrintDocument" class="print-only" style="display:none; font-family: Arial, sans-serif; font-size: 11px; color: #000; padding: 0; margin: 0;">
+
+        <!-- HEADER ROW: Logo left, Yellow Heading right -->
+        <table style="width:100%; border-collapse:collapse; margin-bottom:8px;">
+            <tr>
+                <!-- Logo cell -->
+                <td style="width:160px; vertical-align:middle; padding: 0 12px 0 0;">
+                    <img id="printLogoImg" src="/logo.jpeg" alt="Company Logo"
+                        onerror="this.src='/WhatsApp Image 2026-08-21 at 6.01.30 AM.jpeg'"
+                        style="width:150px; max-height:80px; object-fit:contain; display:block;">
+                </td>
+                <!-- Yellow Heading Box -->
+                <td style="vertical-align:middle;">
+                    <div id="printHeadingBox" style="background:#FFC107; border:3px solid #000; padding:10px 18px; text-align:center;">
+                        <div id="printDocHeading" style="font-size:15px; font-weight:900; letter-spacing:1.5px; text-transform:uppercase; color:#000; line-height:1.3;">
+                            JIBARCO WORKER LIST FOR JUBAIL PROJECT
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- MAIN TABLE -->
+        <table id="printEmployeeTable" style="width:100%; border-collapse:collapse; margin-top:6px;">
+            <thead>
+                <tr style="background:#D4A017; color:#000;">
+                    <th style="border:1.5px solid #000; padding:6px 4px; text-align:center; font-weight:900; text-transform:uppercase; font-size:10px; white-space:nowrap;">SL NO</th>
+                    <th style="border:1.5px solid #000; padding:6px 8px; text-align:left; font-weight:900; text-transform:uppercase; font-size:10px;">NAME</th>
+                    <th style="border:1.5px solid #000; padding:6px 8px; text-align:center; font-weight:900; text-transform:uppercase; font-size:10px;">IQAMA</th>
+                    <th style="border:1.5px solid #000; padding:6px 8px; text-align:center; font-weight:900; text-transform:uppercase; font-size:10px;">POSITION</th>
+                    <th style="border:1.5px solid #000; padding:6px 8px; text-align:center; font-weight:900; text-transform:uppercase; font-size:10px;">NATIONALITY</th>
+                    <th style="border:1.5px solid #000; padding:6px 8px; text-align:center; font-weight:900; text-transform:uppercase; font-size:10px;">REMARKS</th>
+                </tr>
+            </thead>
+            <tbody id="printTableBody">
+                <!-- Populated by JS -->
+            </tbody>
+        </table>
+
+        <!-- FOOTER: Coordinator info -->
+        <div id="printFooterSection" style="margin-top:14px; border-top: 2px solid #000; padding-top:8px;">
+            <div style="font-size:12px; font-weight:900; color:#16a34a; text-decoration:underline; margin-bottom:2px;">THANKS &amp; BEST REGARDS</div>
+            <div id="printFooterName" style="font-size:13px; font-weight:900; color:#1d4ed8; letter-spacing:1px;">HASSAN</div>
+            <div id="printFooterTitle" style="font-size:10px; font-weight:700; color:#000; margin-bottom:1px;">MANAGER</div>
+            <div id="printFooterMobile" style="font-size:10px; color:#000; font-weight:600;">MOBILE : 0536168183</div>
+            <div id="printFooterEmail" style="font-size:10px; font-weight:900; color:#dc2626;">Email: Hassan@jibarco.com</div>
+        </div>
+    </div>
+
     <!-- MAIN JAVASCRIPT LOGIC -->
     <script>
         let allEmployees = [];
         let employeeToDeleteId = null;
+        let inlineEditingId = null;
 
         // Check authentication state on page load
         async function checkAuth() {
@@ -491,7 +793,6 @@
                 const data = await res.json();
                 if (data.success) {
                     allEmployees = data.employees || [];
-                    // Cache to local storage as fallback
                     localStorage.setItem('jibarco_employees_cache', JSON.stringify(allEmployees));
                     renderTable(allEmployees);
                     updateStats(allEmployees);
@@ -533,7 +834,7 @@
             document.getElementById('statProfessions').textContent = uniqueProfessions.size;
         }
 
-        // Render Table Rows
+        // Render Table Rows (Normal & Inline Edit)
         function renderTable(list) {
             const tbody = document.getElementById('employeesTableBody');
             const emptyState = document.getElementById('emptyState');
@@ -548,6 +849,95 @@
             tbody.innerHTML = list.map((emp, index) => {
                 const initial = (emp.name || 'E').charAt(0).toUpperCase();
                 const status = emp.status || 'Active';
+
+                // Check if this row is currently in inline edit mode
+                if (emp._id === inlineEditingId) {
+                    return `
+                        <tr class="bg-blue-50/70 border-y-2 border-blue-400">
+                            <td class="py-2 px-3 text-center font-bold text-blue-700 text-xs">${index + 1}</td>
+                            <td class="py-1.5 px-2">
+                                <input 
+                                    type="text" 
+                                    id="edit_name_${emp._id}" 
+                                    value="${escapeHtml(emp.name)}" 
+                                    onkeydown="if(event.key==='Enter') saveInlineEdit('${emp._id}')"
+                                    class="excel-cell-input focus:border-blue-600 focus:ring-blue-500"
+                                >
+                            </td>
+                            <td class="py-1.5 px-2">
+                                <input 
+                                    type="text" 
+                                    id="edit_iqama_${emp._id}" 
+                                    value="${escapeHtml(emp.iqama)}" 
+                                    maxlength="15"
+                                    onkeydown="if(event.key==='Enter') saveInlineEdit('${emp._id}')"
+                                    class="excel-cell-input font-mono focus:border-blue-600 focus:ring-blue-500"
+                                >
+                            </td>
+                            <td class="py-1.5 px-2">
+                                <input 
+                                    type="text" 
+                                    id="edit_nationality_${emp._id}" 
+                                    list="nationalityList" 
+                                    value="${escapeHtml(emp.nationality)}" 
+                                    onkeydown="if(event.key==='Enter') saveInlineEdit('${emp._id}')"
+                                    class="excel-cell-input focus:border-blue-600 focus:ring-blue-500"
+                                >
+                            </td>
+                            <td class="py-1.5 px-2">
+                                <input 
+                                    type="text" 
+                                    id="edit_profession_${emp._id}" 
+                                    list="professionList" 
+                                    value="${escapeHtml(emp.profession)}" 
+                                    onkeydown="if(event.key==='Enter') saveInlineEdit('${emp._id}')"
+                                    class="excel-cell-input focus:border-blue-600 focus:ring-blue-500"
+                                >
+                            </td>
+                            <td class="py-1.5 px-2">
+                                <input 
+                                    type="text" 
+                                    id="edit_phone_${emp._id}" 
+                                    value="${escapeHtml(emp.phone)}" 
+                                    onkeydown="if(event.key==='Enter') saveInlineEdit('${emp._id}')"
+                                    class="excel-cell-input focus:border-blue-600 focus:ring-blue-500"
+                                >
+                            </td>
+                            <td class="py-1.5 px-2">
+                                <select 
+                                    id="edit_status_${emp._id}" 
+                                    class="excel-cell-input font-semibold"
+                                >
+                                    <option value="Active" ${status==='Active'?'selected':''}>Active</option>
+                                    <option value="On Leave" ${status==='On Leave'?'selected':''}>On Leave</option>
+                                    <option value="Inactive" ${status==='Inactive'?'selected':''}>Inactive</option>
+                                </select>
+                            </td>
+                            <td class="py-1.5 px-3 text-right no-print">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button 
+                                        type="button" 
+                                        onclick="saveInlineEdit('${emp._id}')" 
+                                        class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg shadow-sm"
+                                        title="Save Changes (Enter)"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Save</span>
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        onclick="cancelInlineEdit()" 
+                                        class="p-1.5 text-slate-500 hover:text-slate-800 bg-white border border-slate-200 rounded-lg hover:bg-slate-100"
+                                        title="Cancel"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+
                 const statusBadge = status === 'Active' 
                     ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Active</span>'
                     : status === 'On Leave'
@@ -556,10 +946,10 @@
 
                 return `
                     <tr class="hover:bg-slate-50/70 transition-colors group">
-                        <td class="py-3.5 px-4 font-semibold text-slate-400 text-[11px]">${index + 1}</td>
-                        <td class="py-3.5 px-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-extrabold flex items-center justify-center text-xs flex-shrink-0">
+                        <td class="py-3 px-3 text-center font-semibold text-slate-400 text-[11px]">${index + 1}</td>
+                        <td class="py-3 px-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-extrabold flex items-center justify-center text-xs flex-shrink-0">
                                     ${initial}
                                 </div>
                                 <div>
@@ -568,7 +958,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="py-3.5 px-4">
+                        <td class="py-3 px-3">
                             <span class="font-mono font-semibold text-slate-800 bg-slate-100 px-2 py-1 rounded text-[11px] border border-slate-200 flex items-center gap-1.5 w-max">
                                 ${escapeHtml(emp.iqama)}
                                 <button onclick="copyToClipboard('${escapeHtml(emp.iqama)}')" class="no-print text-slate-400 hover:text-blue-600" title="Copy Iqama">
@@ -576,27 +966,30 @@
                                 </button>
                             </span>
                         </td>
-                        <td class="py-3.5 px-4 font-semibold text-slate-700">
+                        <td class="py-3 px-3 font-semibold text-slate-700">
                             ${escapeHtml(emp.nationality)}
                         </td>
-                        <td class="py-3.5 px-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                        <td class="py-3 px-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-100">
                                 ${escapeHtml(emp.profession)}
                             </span>
                         </td>
-                        <td class="py-3.5 px-4">
+                        <td class="py-3 px-3">
                             <a href="tel:${escapeHtml(emp.phone)}" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1.5 group-hover:underline">
                                 <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                                 <span>${escapeHtml(emp.phone)}</span>
                             </a>
                         </td>
-                        <td class="py-3.5 px-4">
+                        <td class="py-3 px-3">
                             ${statusBadge}
                         </td>
-                        <td class="py-3.5 px-4 text-right no-print">
+                        <td class="py-3 px-3 text-right no-print">
                             <div class="flex items-center justify-end gap-1.5">
-                                <button onclick="openEditModal('${emp._id}')" class="p-1.5 text-slate-600 hover:text-blue-700 bg-slate-100 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200" title="Edit Employee">
+                                <button onclick="startInlineEdit('${emp._id}')" class="p-1.5 text-slate-600 hover:text-emerald-700 bg-slate-100 hover:bg-emerald-50 rounded-lg transition-colors border border-slate-200" title="Inline Edit (Excel style)">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                <button onclick="openEditModal('${emp._id}')" class="p-1.5 text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200" title="Edit via Modal Form">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
                                 </button>
                                 <button onclick="openDeleteModal('${emp._id}')" class="p-1.5 text-slate-600 hover:text-rose-700 bg-slate-100 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200" title="Delete Employee">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -608,7 +1001,194 @@
             }).join('');
         }
 
-        // Live Search & Filter
+        // ----------------- EXCEL INLINE FAST-ENTRY METHODS ----------------- //
+
+        function focusInlineRow() {
+            const input = document.getElementById('rowName');
+            if (input) {
+                input.focus();
+                input.select();
+                const row = document.getElementById('inlineAddRow');
+                if (row) {
+                    row.classList.add('bg-emerald-100/70');
+                    setTimeout(() => row.classList.remove('bg-emerald-100/70'), 400);
+                }
+            }
+        }
+
+        function handleInlineRowKeyDown(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveInlineRow();
+            }
+        }
+
+        function clearInlineRow() {
+            document.getElementById('rowName').value = '';
+            document.getElementById('rowIqama').value = '';
+            document.getElementById('rowNationality').value = '';
+            document.getElementById('rowProfession').value = '';
+            document.getElementById('rowPhone').value = '';
+            document.getElementById('rowStatus').value = 'Active';
+            document.getElementById('rowIqama').classList.remove('border-rose-500');
+            document.getElementById('rowName').focus();
+        }
+
+        async function saveInlineRow() {
+            const nameInput = document.getElementById('rowName');
+            const iqamaInput = document.getElementById('rowIqama');
+            const nationalityInput = document.getElementById('rowNationality');
+            const professionInput = document.getElementById('rowProfession');
+            const phoneInput = document.getElementById('rowPhone');
+            const statusInput = document.getElementById('rowStatus');
+
+            const name = nameInput.value.trim();
+            const iqama = iqamaInput.value.trim();
+            const nationality = nationalityInput.value.trim();
+            const profession = professionInput.value.trim();
+            const phone = phoneInput.value.trim();
+            const status = statusInput.value;
+
+            // Fast validation
+            if (!name) {
+                showToast('Please enter Employee Name', 'error');
+                nameInput.focus();
+                return;
+            }
+            if (!iqama) {
+                showToast('Please enter Iqama Number', 'error');
+                iqamaInput.focus();
+                return;
+            }
+            if (!nationality) {
+                showToast('Please enter Nationality', 'error');
+                nationalityInput.focus();
+                return;
+            }
+            if (!profession) {
+                showToast('Please enter Profession', 'error');
+                professionInput.focus();
+                return;
+            }
+            if (!phone) {
+                showToast('Please enter Phone Number', 'error');
+                phoneInput.focus();
+                return;
+            }
+
+            const saveBtn = document.getElementById('btnSaveInlineRow');
+            const saveIcon = document.getElementById('saveInlineIcon');
+            const saveSpinner = document.getElementById('saveInlineSpinner');
+            const saveText = document.getElementById('saveInlineText');
+
+            saveBtn.disabled = true;
+            saveIcon.classList.add('hidden');
+            saveSpinner.classList.remove('hidden');
+            saveText.textContent = 'Saving...';
+
+            try {
+                const res = await fetch('/api/employees', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, iqama, nationality, profession, phone, status })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    showToast(data.message || 'Failed to save employee', 'error');
+                    if (data.message && data.message.toLowerCase().includes('iqama')) {
+                        iqamaInput.classList.add('border-rose-500');
+                        iqamaInput.focus();
+                    }
+                    return;
+                }
+
+                // Success!
+                showToast(`Employee "${name}" saved!`, 'success');
+                
+                // Clear row inputs
+                nameInput.value = '';
+                iqamaInput.value = '';
+                nationalityInput.value = '';
+                professionInput.value = '';
+                phoneInput.value = '';
+                statusInput.value = 'Active';
+                iqamaInput.classList.remove('border-rose-500');
+
+                // Reload employee list
+                await loadEmployees();
+
+                // Automatically keep focus on rowName for the NEXT row entry! Just like Excel!
+                nameInput.focus();
+
+            } catch (err) {
+                console.error(err);
+                showToast('Network error: ' + err.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveIcon.classList.remove('hidden');
+                saveSpinner.classList.add('hidden');
+                saveText.textContent = 'Save';
+            }
+        }
+
+        // ----------------- INLINE EDIT METHODS FOR EXISTING ROWS ----------------- //
+
+        function startInlineEdit(id) {
+            inlineEditingId = id;
+            renderTable(allEmployees);
+            setTimeout(() => {
+                const input = document.getElementById(`edit_name_${id}`);
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            }, 50);
+        }
+
+        function cancelInlineEdit() {
+            inlineEditingId = null;
+            renderTable(allEmployees);
+        }
+
+        async function saveInlineEdit(id) {
+            const name = document.getElementById(`edit_name_${id}`).value.trim();
+            const iqama = document.getElementById(`edit_iqama_${id}`).value.trim();
+            const nationality = document.getElementById(`edit_nationality_${id}`).value.trim();
+            const profession = document.getElementById(`edit_profession_${id}`).value.trim();
+            const phone = document.getElementById(`edit_phone_${id}`).value.trim();
+            const status = document.getElementById(`edit_status_${id}`).value;
+
+            if (!name || !iqama || !nationality || !profession || !phone) {
+                showToast('All fields are required', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/employees/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, iqama, nationality, profession, phone, status })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    showToast(data.message || 'Update failed', 'error');
+                    return;
+                }
+
+                showToast('Employee updated successfully!', 'success');
+                inlineEditingId = null;
+                await loadEmployees();
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        }
+
+        // ----------------- SEARCH & FILTERS ----------------- //
+
         function filterEmployees() {
             const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
             const statusFilter = document.getElementById('statusFilter').value;
@@ -629,7 +1209,8 @@
             renderTable(filtered);
         }
 
-        // Add Modal
+        // ----------------- MODAL FORM HANDLERS ----------------- //
+
         function openAddModal() {
             document.getElementById('modalTitle').textContent = 'Add New Employee (إضافة موظف جديد)';
             document.getElementById('saveBtnText').textContent = 'Save Employee';
@@ -641,7 +1222,6 @@
             setTimeout(() => document.getElementById('fieldName').focus(), 50);
         }
 
-        // Edit Modal
         function openEditModal(id) {
             const emp = allEmployees.find(e => e._id === id);
             if (!emp) return;
@@ -663,7 +1243,6 @@
             document.getElementById('employeeModal').classList.add('hidden');
         }
 
-        // Handle Add / Edit Submission
         async function handleFormSubmit(event) {
             event.preventDefault();
             const alertBox = document.getElementById('modalAlert');
@@ -717,7 +1296,8 @@
             }
         }
 
-        // Delete Modal Handlers
+        // ----------------- DELETE MODAL HANDLERS ----------------- //
+
         function openDeleteModal(id) {
             const emp = allEmployees.find(e => e._id === id);
             if (!emp) return;
@@ -763,7 +1343,315 @@
             }
         }
 
-        // Export to CSV
+        // ----------------- PRINT MODAL & DYNAMIC HEADING FUNCTIONS ----------------- //
+
+        function syncProjectHeading(val) {
+            const heading = (val || '').toUpperCase();
+            // Update the print document heading
+            const docHeading = document.getElementById('printDocHeading');
+            if (docHeading) docHeading.textContent = heading;
+            // Update print modal preview
+            const modalPreview = document.getElementById('printModalHeadingPreview');
+            if (modalPreview) modalPreview.textContent = heading || 'JUBARKOO WORKER LIST';
+        }
+
+        function openPrintModal() {
+            // Sync heading preview
+            const heading = (document.getElementById('dynamicProjectHeading').value || 'JUBARKOO WORKER LIST FOR JUBAIL PROJECT').toUpperCase();
+            const preview = document.getElementById('printModalHeadingPreview');
+            if (preview) preview.textContent = heading;
+
+            // Update record count
+            const countEl = document.getElementById('printRecordCount');
+            if (countEl) countEl.textContent = allEmployees.length;
+
+            // Show the modal
+            document.getElementById('printModal').classList.remove('hidden');
+        }
+
+        function closePrintModal() {
+            document.getElementById('printModal').classList.add('hidden');
+        }
+
+        function executePrint() {
+            const heading = (document.getElementById('dynamicProjectHeading').value || 'JUBARKOO WORKER LIST FOR JUBAIL PROJECT').toUpperCase();
+            const coordName  = document.getElementById('printCoordName').value.trim() || 'HASSAN';
+            const coordTitle = document.getElementById('printCoordTitle').value.trim() || 'MANAGER';
+            const coordMobile = document.getElementById('printCoordMobile').value.trim() || '0536168183';
+            const coordEmail  = document.getElementById('printCoordEmail').value.trim() || 'Hassan@jibarco.com';
+
+            // Populate the official print document
+            document.getElementById('printDocHeading').textContent = heading;
+            document.getElementById('printFooterName').textContent  = coordName.toUpperCase();
+            document.getElementById('printFooterTitle').textContent = coordTitle.toUpperCase();
+            document.getElementById('printFooterMobile').textContent = 'MOBILE : ' + coordMobile;
+            document.getElementById('printFooterEmail').textContent  = 'Email: ' + coordEmail;
+
+            // Build print table rows
+            const tbody = document.getElementById('printTableBody');
+            tbody.innerHTML = allEmployees.map((emp, i) => {
+                const rowBg = i % 2 === 0 ? '#ffffff' : '#FEFCE8';
+                return `<tr style="background:${rowBg};">
+                    <td style="border:1.5px solid #000;padding:5px 4px;text-align:center;font-weight:700;">${i + 1}</td>
+                    <td style="border:1.5px solid #000;padding:5px 8px;font-weight:700;">${emp.name || ''}</td>
+                    <td style="border:1.5px solid #000;padding:5px 8px;text-align:center;font-family:monospace;">${emp.iqama || ''}</td>
+                    <td style="border:1.5px solid #000;padding:5px 8px;text-align:center;">${emp.profession || ''}</td>
+                    <td style="border:1.5px solid #000;padding:5px 8px;text-align:center;">${emp.nationality || ''}</td>
+                    <td style="border:1.5px solid #000;padding:5px 8px;"></td>
+                </tr>`;
+            }).join('');
+
+            // Show print document
+            const printDoc = document.getElementById('officialPrintDocument');
+            printDoc.style.display = 'block';
+
+            // Close modal and print
+            closePrintModal();
+            setTimeout(() => {
+                window.print();
+                // After printing, hide the print doc again
+                setTimeout(() => { printDoc.style.display = 'none'; }, 500);
+            }, 150);
+        }
+
+        // ----------------- EXCEL EXPORT WITH LOGO & HEADERS (Dynamic Heading) ----------------- //
+
+        async function exportToExcel() {
+            if (allEmployees.length === 0) {
+                showToast('No employee records available to export.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnExportExcel');
+            const icon = document.getElementById('excelIcon');
+            const spinner = document.getElementById('excelSpinner');
+            const btnText = document.getElementById('excelBtnText');
+
+            if (btn) btn.disabled = true;
+            if (icon) icon.classList.add('hidden');
+            if (spinner) spinner.classList.remove('hidden');
+            if (btnText) btnText.textContent = 'Generating Excel...';
+
+            try {
+                // Ensure ExcelJS library is ready
+                if (typeof ExcelJS === 'undefined') {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+                        script.onload = resolve;
+                        script.onerror = () => {
+                            const backup = document.createElement('script');
+                            backup.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+                            backup.onload = resolve;
+                            backup.onerror = reject;
+                            document.head.appendChild(backup);
+                        };
+                        document.head.appendChild(script);
+                    });
+                }
+
+                // 1. Create Workbook & Worksheet
+                const workbook = new ExcelJS.Workbook();
+                workbook.creator = 'JIBARCO COMPANY LLC';
+                workbook.lastModifiedBy = 'Jibarco Enterprise Portal';
+                workbook.created = new Date();
+                workbook.modified = new Date();
+
+                const worksheet = workbook.addWorksheet('Staff Directory', {
+                    pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+                    views: [{ showGridLines: true }]
+                });
+
+                // Read dynamic project heading from user input
+                const dynamicHeading = (document.getElementById('dynamicProjectHeading').value || 'JUBARKOO WORKER LIST FOR JUBAIL PROJECT').toUpperCase();
+
+                // 2. Fetch Logo Image
+                let imageBuffer = null;
+                const logoCandidates = [
+                    '/logo.jpeg',
+                    encodeURI('/WhatsApp Image 2026-08-21 at 6.01.30 AM.jpeg')
+                ];
+                for (const url of logoCandidates) {
+                    try {
+                        const res = await fetch(url);
+                        if (res.ok) { imageBuffer = await res.arrayBuffer(); break; }
+                    } catch(e) {}
+                }
+
+                // Column widths for 6-column layout (matching print)
+                const colDefs = [
+                    { col: 'A', width: 7 },
+                    { col: 'B', width: 30 },
+                    { col: 'C', width: 22 },
+                    { col: 'D', width: 26 },
+                    { col: 'E', width: 20 },
+                    { col: 'F', width: 15 }
+                ];
+                colDefs.forEach(c => { worksheet.getColumn(c.col).width = c.width; });
+
+                // ROW 1: Logo (col A-B) | Yellow Heading Banner (col C-F)
+                worksheet.getRow(1).height = 80;
+
+                if (imageBuffer) {
+                    const imageId = workbook.addImage({ buffer: imageBuffer, extension: 'jpeg' });
+                    worksheet.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 150, height: 78 } });
+                }
+
+                // Merge A1:B1 for logo placeholder
+                worksheet.mergeCells('A1:B1');
+                const logoCell = worksheet.getCell('A1');
+                logoCell.value = '';
+                logoCell.border = { bottom: { style: 'medium', color: { argb: 'FF000000' } } };
+
+                // Merge C1:F1 for yellow heading banner
+                worksheet.mergeCells('C1:F1');
+                const headingCell = worksheet.getCell('C1');
+                headingCell.value = dynamicHeading;
+                headingCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF000000' } };
+                headingCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFC107' } };
+                headingCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                headingCell.border = {
+                    top: { style: 'medium', color: { argb: 'FF000000' } },
+                    bottom: { style: 'medium', color: { argb: 'FF000000' } },
+                    left: { style: 'medium', color: { argb: 'FF000000' } },
+                    right: { style: 'medium', color: { argb: 'FF000000' } }
+                };
+
+                // ROW 2: spacer
+                worksheet.getRow(2).height = 6;
+
+                // ROW 3: Table Headers (amber/golden - matching print)
+                const activeCount = allEmployees.filter(e => (e.status || 'Active') === 'Active').length;
+                const headerRowNumber = 3;
+                worksheet.getRow(headerRowNumber).height = 28;
+
+                const headers = [
+                    { col: 'A', title: 'SL NO' },
+                    { col: 'B', title: 'NAME' },
+                    { col: 'C', title: 'IQAMA' },
+                    { col: 'D', title: 'POSITION' },
+                    { col: 'E', title: 'NATIONALITY' },
+                    { col: 'F', title: 'REMARKS' }
+                ];
+                headers.forEach(h => {
+                    const cell = worksheet.getCell(`${h.col}${headerRowNumber}`);
+                    cell.value = h.title;
+                    cell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FF000000' } };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD4A017' } };
+                    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: false };
+                    cell.border = {
+                        top: { style: 'medium', color: { argb: 'FF000000' } },
+                        bottom: { style: 'medium', color: { argb: 'FF000000' } },
+                        left: { style: 'medium', color: { argb: 'FF000000' } },
+                        right: { style: 'medium', color: { argb: 'FF000000' } }
+                    };
+                });
+
+                // 5. Populate Data Rows (Row 4 onwards)
+                let currentRowNum = 4;
+                allEmployees.forEach((emp, index) => {
+                    const row = worksheet.getRow(currentRowNum);
+                    row.height = 24;
+
+                    const isEven = index % 2 === 0;
+                    const rowBgColor = isEven ? 'FFFFFFFF' : 'FFF8FAFC'; // Alternating clean striping
+
+                    const status = emp.status || 'Active';
+                    const statusColor = status === 'Active' ? 'FF059669' : status === 'On Leave' ? 'FFD97706' : 'FF64748B';
+
+                    const values = [
+                        { col: 'A', val: index + 1, align: 'center', bold: true, color: 'FF000000', numFmt: '' },
+                        { col: 'B', val: emp.name || '', align: 'left', bold: true, color: 'FF000000', numFmt: '' },
+                        { col: 'C', val: emp.iqama || '', align: 'center', bold: false, color: 'FF000000', numFmt: '@' },
+                        { col: 'D', val: emp.profession || '', align: 'center', bold: false, color: 'FF000000', numFmt: '' },
+                        { col: 'E', val: emp.nationality || '', align: 'center', bold: false, color: 'FF000000', numFmt: '' },
+                        { col: 'F', val: '', align: 'center', bold: false, color: 'FF000000', numFmt: '' }
+                    ];
+
+                    values.forEach(v => {
+                        const cell = worksheet.getCell(`${v.col}${currentRowNum}`);
+                        cell.value = v.val;
+                        cell.font = { name: 'Calibri', size: 10.5, bold: v.bold, color: { argb: v.color } };
+                        if (v.numFmt) cell.numFmt = v.numFmt;
+                        cell.alignment = { vertical: 'middle', horizontal: v.align };
+                        cell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: rowBgColor }
+                        };
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                            right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+                        };
+                    });
+
+                    currentRowNum++;
+                });
+
+                // 6. Coordinator Footer Rows (matching print layout)
+                currentRowNum += 2;
+                worksheet.mergeCells(`A${currentRowNum}:F${currentRowNum}`);
+                const thanksCell = worksheet.getCell(`A${currentRowNum}`);
+                thanksCell.value = 'THANKS & BEST REGARDS';
+                thanksCell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FF16A34A' }, underline: true };
+                thanksCell.border = { top: { style: 'medium', color: { argb: 'FF000000' } } };
+
+                currentRowNum++;
+                const coordName  = (document.getElementById('printCoordName')  ? document.getElementById('printCoordName').value  : 'HASSAN').toUpperCase();
+                const coordTitle = (document.getElementById('printCoordTitle') ? document.getElementById('printCoordTitle').value : 'MANAGER').toUpperCase();
+                const coordMobile = document.getElementById('printCoordMobile') ? document.getElementById('printCoordMobile').value : '0536168183';
+                const coordEmail  = document.getElementById('printCoordEmail')  ? document.getElementById('printCoordEmail').value  : 'Hassan@jibarco.com';
+
+                worksheet.mergeCells(`A${currentRowNum}:F${currentRowNum}`);
+                const nameCell = worksheet.getCell(`A${currentRowNum}`);
+                nameCell.value = coordName;
+                nameCell.font = { name: 'Arial', size: 13, bold: true, color: { argb: 'FF1D4ED8' } };
+
+                currentRowNum++;
+                worksheet.mergeCells(`A${currentRowNum}:F${currentRowNum}`);
+                const titleCell2 = worksheet.getCell(`A${currentRowNum}`);
+                titleCell2.value = coordTitle;
+                titleCell2.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF000000' } };
+
+                currentRowNum++;
+                worksheet.mergeCells(`A${currentRowNum}:F${currentRowNum}`);
+                const mobileCell = worksheet.getCell(`A${currentRowNum}`);
+                mobileCell.value = 'MOBILE : ' + coordMobile;
+                mobileCell.font = { name: 'Arial', size: 10, color: { argb: 'FF000000' } };
+
+                currentRowNum++;
+                worksheet.mergeCells(`A${currentRowNum}:F${currentRowNum}`);
+                const emailCell = worksheet.getCell(`A${currentRowNum}`);
+                emailCell.value = 'Email: ' + coordEmail;
+                emailCell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFDC2626' } };
+
+                // 7. Generate & Download XLSX
+                const headingSlug = dynamicHeading.replace(/[^A-Z0-9]/g, '_').slice(0, 30);
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `WorkerList_${headingSlug}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showToast('Excel file with dynamic heading & logo downloaded successfully!');
+            } catch (err) {
+                console.error('Excel generation error:', err);
+                showToast('Error generating Excel, falling back to CSV...', 'error');
+                exportToCSV();
+            } finally {
+                if (btn) btn.disabled = false;
+                if (icon) icon.classList.remove('hidden');
+                if (spinner) spinner.classList.add('hidden');
+                if (btnText) btnText.textContent = 'Export Excel (.xlsx)';
+            }
+        }
+
+        // CSV fallback
         function exportToCSV() {
             if (allEmployees.length === 0) {
                 alert('No employee records available to export.');
@@ -790,14 +1678,14 @@
             link.click();
         }
 
-        // Utility: Copy to Clipboard
+        // ----------------- UTILITIES ----------------- //
+
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
                 showToast(`Copied ${text} to clipboard!`);
             });
         }
 
-        // Utility: Escape HTML
         function escapeHtml(string) {
             if (!string) return '';
             return String(string)
@@ -808,7 +1696,15 @@
                 .replace(/'/g, '&#039;');
         }
 
-        // Initialize
+        // Global key shortcut: Alt + N to jump to Add Row
+        window.addEventListener('keydown', (e) => {
+            if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+                e.preventDefault();
+                focusInlineRow();
+            }
+        });
+
+        // Initialize on load
         checkAuth();
         loadEmployees();
     </script>
