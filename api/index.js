@@ -42,20 +42,41 @@ async function connectToDatabase() {
         });
         isConnected = true;
 
-        const targetEmail = 'faisal@jibarco.com';
-        const targetPass = 'Faisal123';
-        const targetName = 'Faisal Salem';
-
-        // Ensure single user exists
-        let user = await User.findOne({ email: targetEmail });
-        if (!user) {
-            user = new User({
-                name: targetName,
-                email: targetEmail,
-                password: targetPass,
-                role: 'admin'
+        // 1. Ensure Faisal Salem (Admin) exists
+        const adminEmail = 'faisal@jibarco.com';
+        let adminUser = await User.findOne({ email: adminEmail });
+        if (!adminUser) {
+            adminUser = new User({
+                name: 'Faisal Salem',
+                email: adminEmail,
+                password: 'Faisal123',
+                role: 'admin',
+                permissions: ['all']
             });
-            await user.save();
+            await adminUser.save();
+        } else if (!adminUser.permissions || !adminUser.permissions.includes('all')) {
+            adminUser.permissions = ['all'];
+            await adminUser.save();
+        }
+
+        // 2. Ensure Hassan exists with access to Quotation & Add Employee only
+        const hassanEmail = 'hassan@jibarco.com';
+        let hassanUser = await User.findOne({ email: hassanEmail });
+        if (!hassanUser) {
+            hassanUser = new User({
+                name: 'Hassan',
+                email: hassanEmail,
+                password: 'hassan@123',
+                role: 'user',
+                permissions: ['quotation', 'employees']
+            });
+            await hassanUser.save();
+        } else {
+            hassanUser.name = 'Hassan';
+            hassanUser.password = 'hassan@123';
+            hassanUser.role = 'user';
+            hassanUser.permissions = ['quotation', 'employees'];
+            await hassanUser.save();
         }
     } catch (err) {
         console.error('Database connection error:', err.message);
@@ -113,7 +134,8 @@ app.post('/api/auth/login', async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                permissions: user.permissions || ['all']
             }
         });
     } catch (err) {
@@ -130,7 +152,8 @@ app.get('/api/auth/me', verifyAuth, (req, res) => {
             id: req.user._id,
             name: req.user.name,
             email: req.user.email,
-            role: req.user.role
+            role: req.user.role,
+            permissions: req.user.permissions || ['all']
         }
     });
 });
@@ -320,6 +343,30 @@ app.use((req, res, next) => {
     if (req.path.endsWith('.html') && req.path !== '/login.html') {
         return verifyAuth(req, res, () => {
             const cleanPath = req.path.replace(/^\/+/, '');
+
+            // Check page-level permissions for non-admin users
+            const user = req.user;
+            const isRestricted = user && user.role !== 'admin' && !(user.permissions && user.permissions.includes('all'));
+
+            if (isRestricted) {
+                const userPermissions = user.permissions || [];
+                // Map HTML files to permission identifier
+                const pagePermissionMap = {
+                    'quotation.html': 'quotation',
+                    'employees.html': 'employees',
+                    'index.html': 'allowed',
+                    'invoice.html': 'invoice',
+                    'pusrchase.html': 'purchase',
+                    'agreement.html': 'agreement'
+                };
+
+                const requiredPerm = pagePermissionMap[cleanPath];
+                if (requiredPerm && requiredPerm !== 'allowed' && !userPermissions.includes(requiredPerm)) {
+                    // Unauthorized attempt to access restricted document!
+                    return res.redirect('/index.html?unauthorized=1');
+                }
+            }
+
             res.sendFile(resolveFilePath(cleanPath));
         });
     }
