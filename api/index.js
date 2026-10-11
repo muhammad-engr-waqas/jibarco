@@ -8,6 +8,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
+const Employee = require('../models/Employee');
 const { verifyAuth, JWT_SECRET } = require('../middleware/auth');
 
 const app = express();
@@ -138,6 +139,161 @@ app.get('/api/auth/me', verifyAuth, (req, res) => {
 app.post('/api/auth/logout', (req, res) => {
     res.clearCookie('token');
     return res.json({ success: true, message: 'Logged out successfully.' });
+});
+
+// ----------------- EMPLOYEE API ROUTES ----------------- //
+
+// Get all employees (supports search)
+app.get('/api/employees', verifyAuth, async (req, res) => {
+    try {
+        const { search } = req.query;
+        let query = {};
+        if (search && search.trim()) {
+            const regex = new RegExp(search.trim(), 'i');
+            query = {
+                $or: [
+                    { name: regex },
+                    { iqama: regex },
+                    { nationality: regex },
+                    { profession: regex },
+                    { phone: regex }
+                ]
+            };
+        }
+        const employees = await Employee.find(query).sort({ createdAt: -1 });
+        return res.json({ success: true, count: employees.length, employees });
+    } catch (err) {
+        console.error('Error fetching employees:', err);
+        return res.status(500).json({ success: false, message: 'Failed to fetch employees' });
+    }
+});
+
+// Get single employee
+app.get('/api/employees/:id', verifyAuth, async (req, res) => {
+    try {
+        const employee = await Employee.findById(req.params.id);
+        if (!employee) {
+            return res.status(404).json({ success: false, message: 'Employee not found' });
+        }
+        return res.json({ success: true, employee });
+    } catch (err) {
+        console.error('Error fetching employee:', err);
+        return res.status(500).json({ success: false, message: 'Failed to fetch employee' });
+    }
+});
+
+// Add new employee
+app.post('/api/employees', verifyAuth, async (req, res) => {
+    try {
+        const { name, iqama, nationality, profession, phone, status, notes } = req.body;
+
+        if (!name || !iqama || !nationality || !profession || !phone) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'All fields (Name, Iqama, Nationality, Profession, Phone) are required.' 
+            });
+        }
+
+        // Check if iqama already exists
+        const existing = await Employee.findOne({ iqama: iqama.trim() });
+        if (existing) {
+            return res.status(400).json({
+                success: false,
+                message: `An employee with Iqama number ${iqama} already exists (${existing.name}).`
+            });
+        }
+
+        const employee = new Employee({
+            name: name.trim(),
+            iqama: iqama.trim(),
+            nationality: nationality.trim(),
+            profession: profession.trim(),
+            phone: phone.trim(),
+            status: status || 'Active',
+            notes: notes ? notes.trim() : ''
+        });
+
+        await employee.save();
+        return res.status(201).json({ 
+            success: true, 
+            message: 'Employee added successfully!', 
+            employee 
+        });
+    } catch (err) {
+        console.error('Error creating employee:', err);
+        return res.status(500).json({ success: false, message: 'Failed to save employee: ' + err.message });
+    }
+});
+
+// Update employee
+app.put('/api/employees/:id', verifyAuth, async (req, res) => {
+    try {
+        const { name, iqama, nationality, profession, phone, status, notes } = req.body;
+
+        if (!name || !iqama || !nationality || !profession || !phone) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'All fields (Name, Iqama, Nationality, Profession, Phone) are required.' 
+            });
+        }
+
+        // Check duplicate iqama for other employee
+        const existing = await Employee.findOne({ 
+            iqama: iqama.trim(), 
+            _id: { $ne: req.params.id } 
+        });
+        if (existing) {
+            return res.status(400).json({
+                success: false,
+                message: `Another employee already has Iqama number ${iqama} (${existing.name}).`
+            });
+        }
+
+        const employee = await Employee.findByIdAndUpdate(
+            req.params.id,
+            {
+                name: name.trim(),
+                iqama: iqama.trim(),
+                nationality: nationality.trim(),
+                profession: profession.trim(),
+                phone: phone.trim(),
+                status: status || 'Active',
+                notes: notes ? notes.trim() : '',
+                updatedAt: Date.now()
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!employee) {
+            return res.status(404).json({ success: false, message: 'Employee not found' });
+        }
+
+        return res.json({ 
+            success: true, 
+            message: 'Employee updated successfully!', 
+            employee 
+        });
+    } catch (err) {
+        console.error('Error updating employee:', err);
+        return res.status(500).json({ success: false, message: 'Failed to update employee: ' + err.message });
+    }
+});
+
+// Delete employee
+app.delete('/api/employees/:id', verifyAuth, async (req, res) => {
+    try {
+        const employee = await Employee.findByIdAndDelete(req.params.id);
+        if (!employee) {
+            return res.status(404).json({ success: false, message: 'Employee not found' });
+        }
+        return res.json({ 
+            success: true, 
+            message: `Employee "${employee.name}" deleted successfully.` 
+        });
+    } catch (err) {
+        console.error('Error deleting employee:', err);
+        return res.status(500).json({ success: false, message: 'Failed to delete employee' });
+    }
 });
 
 // ----------------- PAGE ROUTE PROTECTION ----------------- //
