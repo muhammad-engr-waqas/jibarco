@@ -24,7 +24,7 @@
         .btn-ghost:hover { background:#f8fafc; color:#0f172a; }
         .nav-pill { padding:6px 16px; border-radius:6px; font-size:11px; font-weight:700; color:#475569; background:#fff; border:1px solid #cbd5e1; cursor:pointer; }
         .nav-pill.active { background:#1e293b; color:#fff; border-color:#1e293b; }
-        .pdf-page { width:210mm; min-height:296.5mm; max-height:296.5mm; box-sizing:border-box; background:#fff; margin:0 auto 20px auto; padding:8mm 10mm; font-family:Arial,Helvetica,sans-serif; position:relative; box-shadow:0 4px 12px rgba(0,0,0,0.08); overflow:hidden; }
+        .pdf-page { width:210mm; min-height:296.5mm; box-sizing:border-box; background:#fff; margin:0 auto 20px auto; padding:8mm 10mm 4mm 10mm; font-family:Arial,Helvetica,sans-serif; position:relative; box-shadow:0 4px 12px rgba(0,0,0,0.08); display:flex; flex-direction:column; }
         .term-row { border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:8px; background:#f8fafc; }
     </style>
 </head>
@@ -120,17 +120,38 @@
 
 <!-- 04 · TERMS -->
 <div class="section-card">
-    <div class="flex justify-between items-center mb-3">
-        <div class="section-title">04 · TERMS &amp; CONDITIONS</div>
-        <button type="button" id="addTermBtn" class="btn-light-blue">+ Add Term</button>
+    <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+        <div class="section-title">04 · TERMS &amp; CONDITIONS / الشروط والأحكام</div>
+        <div class="flex items-center gap-2">
+            <label class="flex items-center gap-1.5 text-[10px] text-blue-700 font-semibold cursor-pointer select-none bg-blue-50 border border-blue-200 hover:bg-blue-100 rounded-lg px-2.5 py-1 transition-all" title="Automatically translate between English and Arabic as you type">
+                <input type="checkbox" id="autoTranslateTerms" checked class="w-3.5 h-3.5 text-blue-600 rounded cursor-pointer">
+                <span>⚡ Auto-Translate (EN ⇄ AR)</span>
+            </label>
+            <button type="button" id="addTermBtn" class="btn-light-blue">+ Add Term</button>
+        </div>
     </div>
     <div id="termsContainer"></div>
 </div>
 
-<!-- 05 · OFFICIAL STAMPS & SIGNATURES -->
+<!-- 05 · PAYMENT TERMS -->
+<div class="section-card border-l-4 border-l-amber-500">
+    <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+        <div class="section-title text-amber-900">05 · PAYMENT TERMS / شروط الدفع</div>
+        <div class="flex items-center gap-2">
+            <label class="flex items-center gap-1.5 text-[10px] text-amber-800 font-semibold cursor-pointer select-none bg-amber-50 border border-amber-200 hover:bg-amber-100 rounded-lg px-2.5 py-1 transition-all" title="Automatically translate between English and Arabic as you type">
+                <input type="checkbox" id="autoTranslatePaymentTerms" checked class="w-3.5 h-3.5 text-amber-600 rounded cursor-pointer">
+                <span>⚡ Auto-Translate (EN ⇄ AR)</span>
+            </label>
+            <button type="button" id="addPaymentTermBtn" class="btn-blue bg-amber-600 hover:bg-amber-700 text-white text-xs py-1.5 px-3 rounded-lg font-bold shadow-sm transition-all">+ Add Payment Term</button>
+        </div>
+    </div>
+    <div id="paymentTermsContainer"></div>
+</div>
+
+<!-- 06 · OFFICIAL STAMPS & SIGNATURES -->
 <div class="section-card border-l-4 border-l-emerald-600">
     <div class="section-title mb-3 flex items-center justify-between">
-        <span>05 · OFFICIAL STAMPS &amp; SIGNATURES / الأختام والتوقيع</span>
+        <span>06 · OFFICIAL STAMPS &amp; SIGNATURES / الأختام والتوقيع</span>
         <span class="text-[9.5px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded tracking-normal">Auto-Background Removal</span>
     </div>
     <p class="text-[11px] text-slate-500 mb-3 font-medium">Select stamp images from your PC. The system automatically removes white paper backgrounds like in MS Word, making stamps transparent on the contract.</p>
@@ -230,32 +251,418 @@ const DEFAULT_TERMS = [
     { en: "WHEREAS the first Party has various contracts with refineries, Petrochemical Plants and other Clients within Kingdom of Saudi Arabia, and the Second Party after discussion, has agreed to provide subcontractor services to the First Party.", ar: "حيث أن الطرف الأول ينفذ عدة عقود مع الهيئة السعودية للمياه لو المحطات ليتر وكيماوية وعملاء آخرين داخل المملكة وقد ابدا الطرف الثاني رغبته في تأمين خدمات للطرف الأول." }
 ];
 
+const DEFAULT_PAYMENT_TERMS = [
+    { en: "Timesheet: Second Party shall submit approved timesheet on 1st of each month.", ar: "كشف الساعات: يقدم الطرف الثاني كشف الساعات المعتمد في الأول من كل شهر." },
+    { en: "Invoicing: First Party shall issue invoice within 5 business days from receipt of timesheet.", ar: "الفوترة: يصدر الطرف الأول الفاتورة خلال 5 أيام عمل من استلام كشف الساعات." },
+    { en: "Payment: Payment is due within 5 days from invoice date, via bank transfer to the account stated in the invoice.", ar: "الدفع: يستحق السداد خلال 5 أيام من تاريخ الفاتورة، عبر تحويل بنكي إلى الحساب المذكور في الفاتورة." },
+    { en: "Late Payment: Failure to pay on time will result in suspension of services until dues are cleared.", ar: "التأخر في الدفع: يؤدي التأخر في السداد إلى تعليق الخدمات حتى تسوية المبالغ المستحقة." },
+    { en: "Taxes: All amounts are exclusive of VAT/taxes, which shall be borne by Second Party.", ar: "الضرائب: جميع المبالغ لا تشمل ضريبة القيمة المضافة / الضرائب التي يتحملها الطرف الثاني." },
+    { en: "Invoice Dispute: Any dispute must be raised in writing within 7 days of invoice, otherwise invoice is deemed accepted.", ar: "نزاعات الفاتورة: يجب رفع أي نزاع كتابياً خلال 7 أيام من تاريخ الفاتورة، وإلا تُعتبر الفاتورة مقبولة." },
+    { en: "Termination: Either party may terminate with 30 days prior written notice. Non-payment beyond due date shall be considered material breach.", ar: "الإنهاء: يحق لأي طرف إنهاء العقد بإشعار كتابي مسبق مدته 30 يوماً. يُعدّ عدم السداد بعد تاريخ الاستحقاق خرقاً جوهرياً للعقد." }
+];
+
 function esc(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function translateText(text, fromLang, toLang) {
+    if (!text || !text.trim()) return '';
+    const cleanText = text.trim();
+
+    // 1. Primary: Google Translate public single endpoint
+    try {
+        const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${toLang}&dt=t&q=${encodeURIComponent(cleanText)}`;
+        const res = await fetch(gUrl);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data[0] && Array.isArray(data[0])) {
+                const combined = data[0].map(segment => segment[0]).filter(Boolean).join('');
+                if (combined && combined.trim()) {
+                    return combined.trim();
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('Google Translate API error, attempting fallback:', e);
+    }
+
+    // 2. Fallback: MyMemory Translation API
+    try {
+        const mmUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${fromLang}|${toLang}`;
+        const res = await fetch(mmUrl);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.responseData && data.responseData.translatedText) {
+                return data.responseData.translatedText.trim();
+            }
+        }
+    } catch (e) {
+        console.warn('MyMemory Translate API error:', e);
+    }
+
+    return null;
 }
 
 function addTermRow(en, ar) {
     const container = document.getElementById('termsContainer');
     const idx = container.children.length + 1;
     const row = document.createElement('div');
-    row.className = 'term-row';
+    row.className = 'term-row bg-slate-50/70 p-3 rounded-lg border border-slate-200 mb-3';
     row.innerHTML = `
         <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-bold text-blue-600 term-num"># ${idx}</span>
-            <button type="button" class="remove-term text-slate-400 hover:text-red-500 font-bold text-base">×</button>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-blue-700 term-num"># ${idx}</span>
+                <span class="translate-status text-[10px] text-slate-400 font-medium hidden"></span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button type="button" class="btn-trans-en-ar text-[10px] text-blue-700 hover:text-blue-900 bg-white hover:bg-blue-50 border border-blue-200 px-2 py-0.5 rounded font-semibold transition-all flex items-center gap-1 shadow-2xs" title="Translate English to Arabic / ترجمة للإنجليزية إلى العربية">
+                    EN → AR 🌐
+                </button>
+                <button type="button" class="btn-trans-ar-en text-[10px] text-emerald-700 hover:text-emerald-900 bg-white hover:bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold transition-all flex items-center gap-1 shadow-2xs" title="Translate Arabic to English / ترجمة من العربية إلى الإنجليزية">
+                    AR → EN 🌐
+                </button>
+                <button type="button" class="remove-term text-slate-400 hover:text-red-500 font-bold text-base leading-none px-1 ml-1" title="Delete Term / حذف">×</button>
+            </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-            <textarea rows="3" class="form-input term-en text-[11px]" placeholder="English term..." style="resize:vertical;">${en || ''}</textarea>
-            <textarea rows="3" class="form-input form-input-ar arabic-text term-ar text-[11px]" placeholder="النص العربي..." style="resize:vertical;">${ar || ''}</textarea>
+            <div>
+                <label class="block text-[9.5px] font-bold text-slate-500 mb-1 uppercase tracking-wider">English Term</label>
+                <textarea rows="3" class="form-input term-en text-[11px] w-full" placeholder="Type English term here..." style="resize:vertical;">${en || ''}</textarea>
+            </div>
+            <div>
+                <label class="block text-[9.5px] font-bold text-slate-500 mb-1 uppercase tracking-wider text-right">النص العربي</label>
+                <textarea rows="3" class="form-input form-input-ar arabic-text term-ar text-[11px] w-full" placeholder="اكتب النص العربي هنا..." style="resize:vertical;">${ar || ''}</textarea>
+            </div>
         </div>`;
-    row.querySelectorAll('textarea').forEach(t => t.addEventListener('input', updatePreview));
-    row.querySelector('.remove-term').addEventListener('click', () => { row.remove(); renumberTerms(); updatePreview(); });
+
+    const enTextarea   = row.querySelector('.term-en');
+    const arTextarea   = row.querySelector('.term-ar');
+    const statusSpan   = row.querySelector('.translate-status');
+    const btnTransEnAr = row.querySelector('.btn-trans-en-ar');
+    const btnTransArEn = row.querySelector('.btn-trans-ar-en');
+
+    let isTranslating = false;
+    let timerEn = null;
+    let timerAr = null;
+
+    async function doTranslateEnToAr() {
+        if (isTranslating) return;
+        const val = enTextarea.value.trim();
+        if (!val) return;
+        isTranslating = true;
+        if (statusSpan) {
+            statusSpan.textContent = 'Translating EN → AR...';
+            statusSpan.className = 'translate-status text-[10px] text-blue-600 font-semibold animate-pulse';
+            statusSpan.classList.remove('hidden');
+        }
+        try {
+            const res = await translateText(val, 'en', 'ar');
+            if (res) {
+                arTextarea.value = res;
+                updatePreview();
+                if (statusSpan) {
+                    statusSpan.textContent = '✓ Translated to Arabic';
+                    statusSpan.className = 'translate-status text-[10px] text-emerald-600 font-semibold';
+                    setTimeout(() => { if (statusSpan) statusSpan.classList.add('hidden'); }, 2500);
+                }
+            } else {
+                if (statusSpan) {
+                    statusSpan.textContent = '⚠️ Translation unavailable';
+                    statusSpan.className = 'translate-status text-[10px] text-amber-600 font-medium';
+                    setTimeout(() => { if (statusSpan) statusSpan.classList.add('hidden'); }, 3000);
+                }
+            }
+        } catch (e) {
+            console.error('Translation error:', e);
+            if (statusSpan) {
+                statusSpan.textContent = '⚠️ Error';
+                statusSpan.className = 'translate-status text-[10px] text-red-500 font-medium';
+            }
+        } finally {
+            isTranslating = false;
+        }
+    }
+
+    async function doTranslateArToEn() {
+        if (isTranslating) return;
+        const val = arTextarea.value.trim();
+        if (!val) return;
+        isTranslating = true;
+        if (statusSpan) {
+            statusSpan.textContent = 'جاري الترجمة AR → EN...';
+            statusSpan.className = 'translate-status text-[10px] text-emerald-600 font-semibold animate-pulse';
+            statusSpan.classList.remove('hidden');
+        }
+        try {
+            const res = await translateText(val, 'ar', 'en');
+            if (res) {
+                enTextarea.value = res;
+                updatePreview();
+                if (statusSpan) {
+                    statusSpan.textContent = '✓ Translated to English';
+                    statusSpan.className = 'translate-status text-[10px] text-emerald-600 font-semibold';
+                    setTimeout(() => { if (statusSpan) statusSpan.classList.add('hidden'); }, 2500);
+                }
+            } else {
+                if (statusSpan) {
+                    statusSpan.textContent = '⚠️ Translation unavailable';
+                    statusSpan.className = 'translate-status text-[10px] text-amber-600 font-medium';
+                    setTimeout(() => { if (statusSpan) statusSpan.classList.add('hidden'); }, 3000);
+                }
+            }
+        } catch (e) {
+            console.error('Translation error:', e);
+            if (statusSpan) {
+                statusSpan.textContent = '⚠️ Error';
+                statusSpan.className = 'translate-status text-[10px] text-red-500 font-medium';
+            }
+        } finally {
+            isTranslating = false;
+        }
+    }
+
+    // Auto-translation when typing with debounce (900ms)
+    enTextarea.addEventListener('input', () => {
+        updatePreview();
+        const autoOpt = document.getElementById('autoTranslateTerms');
+        if (autoOpt && autoOpt.checked) {
+            clearTimeout(timerEn);
+            timerEn = setTimeout(() => {
+                doTranslateEnToAr();
+            }, 900);
+        }
+    });
+
+    arTextarea.addEventListener('input', () => {
+        updatePreview();
+        const autoOpt = document.getElementById('autoTranslateTerms');
+        if (autoOpt && autoOpt.checked) {
+            clearTimeout(timerAr);
+            timerAr = setTimeout(() => {
+                doTranslateArToEn();
+            }, 900);
+        }
+    });
+
+    // Instant translation on blur / change
+    enTextarea.addEventListener('change', () => {
+        const autoOpt = document.getElementById('autoTranslateTerms');
+        if (autoOpt && autoOpt.checked) {
+            clearTimeout(timerEn);
+            doTranslateEnToAr();
+        }
+    });
+
+    arTextarea.addEventListener('change', () => {
+        const autoOpt = document.getElementById('autoTranslateTerms');
+        if (autoOpt && autoOpt.checked) {
+            clearTimeout(timerAr);
+            doTranslateArToEn();
+        }
+    });
+
+    // Manual on-demand buttons
+    btnTransEnAr.addEventListener('click', () => {
+        doTranslateEnToAr();
+    });
+
+    btnTransArEn.addEventListener('click', () => {
+        doTranslateArToEn();
+    });
+
+    row.querySelector('.remove-term').addEventListener('click', () => {
+        row.remove();
+        renumberTerms();
+        updatePreview();
+    });
+
     container.appendChild(row);
     updatePreview();
 }
 
 function renumberTerms() {
     document.querySelectorAll('.term-num').forEach((el, i) => el.textContent = '# ' + (i + 1));
+}
+
+function addPaymentTermRow(en, ar) {
+    const container = document.getElementById('paymentTermsContainer');
+    const idx = container.children.length + 1;
+    const row = document.createElement('div');
+    row.className = 'payment-term-row bg-amber-50/50 p-3 rounded-lg border border-amber-200 mb-3';
+    row.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-amber-800 payment-term-num"># 4.${idx}</span>
+                <span class="payment-translate-status text-[10px] text-slate-400 font-medium hidden"></span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button type="button" class="btn-payment-trans-en-ar text-[10px] text-amber-800 hover:text-amber-950 bg-white hover:bg-amber-100 border border-amber-300 px-2 py-0.5 rounded font-semibold transition-all flex items-center gap-1 shadow-2xs" title="Translate English to Arabic / ترجمة للإنجليزية إلى العربية">
+                    EN → AR 🌐
+                </button>
+                <button type="button" class="btn-payment-trans-ar-en text-[10px] text-emerald-700 hover:text-emerald-900 bg-white hover:bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold transition-all flex items-center gap-1 shadow-2xs" title="Translate Arabic to English / ترجمة من العربية إلى الإنجليزية">
+                    AR → EN 🌐
+                </button>
+                <button type="button" class="remove-payment-term text-slate-400 hover:text-red-500 font-bold text-base leading-none px-1 ml-1" title="Delete Payment Term / حذف">×</button>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-[9.5px] font-bold text-amber-800 mb-1 uppercase tracking-wider">English Payment Term</label>
+                <textarea rows="2" class="form-input payment-term-en text-[11px] w-full" placeholder="Type payment term in English..." style="resize:vertical;">${en || ''}</textarea>
+            </div>
+            <div>
+                <label class="block text-[9.5px] font-bold text-amber-800 mb-1 uppercase tracking-wider text-right">شرط الدفع بالعربية</label>
+                <textarea rows="2" class="form-input form-input-ar arabic-text payment-term-ar text-[11px] w-full" placeholder="اكتب شرط الدفع بالعربية هنا..." style="resize:vertical;">${ar || ''}</textarea>
+            </div>
+        </div>`;
+
+    const enTextarea   = row.querySelector('.payment-term-en');
+    const arTextarea   = row.querySelector('.payment-term-ar');
+    const statusSpan   = row.querySelector('.payment-translate-status');
+    const btnTransEnAr = row.querySelector('.btn-payment-trans-en-ar');
+    const btnTransArEn = row.querySelector('.btn-payment-trans-ar-en');
+
+    let isTranslating = false;
+    let timerEn = null;
+    let timerAr = null;
+
+    async function doTranslateEnToAr() {
+        if (isTranslating) return;
+        const val = enTextarea.value.trim();
+        if (!val) return;
+        isTranslating = true;
+        if (statusSpan) {
+            statusSpan.textContent = 'Translating EN → AR...';
+            statusSpan.className = 'payment-translate-status text-[10px] text-amber-700 font-semibold animate-pulse';
+            statusSpan.classList.remove('hidden');
+        }
+        try {
+            const res = await translateText(val, 'en', 'ar');
+            if (res) {
+                arTextarea.value = res;
+                updatePreview();
+                if (statusSpan) {
+                    statusSpan.textContent = '✓ Translated to Arabic';
+                    statusSpan.className = 'payment-translate-status text-[10px] text-emerald-600 font-semibold';
+                    setTimeout(() => { if (statusSpan) statusSpan.classList.add('hidden'); }, 2500);
+                }
+            } else {
+                if (statusSpan) {
+                    statusSpan.textContent = '⚠️ Translation unavailable';
+                    statusSpan.className = 'payment-translate-status text-[10px] text-amber-600 font-medium';
+                    setTimeout(() => { if (statusSpan) statusSpan.classList.add('hidden'); }, 3000);
+                }
+            }
+        } catch (e) {
+            console.error('Translation error:', e);
+            if (statusSpan) {
+                statusSpan.textContent = '⚠️ Error';
+                statusSpan.className = 'payment-translate-status text-[10px] text-red-500 font-medium';
+            }
+        } finally {
+            isTranslating = false;
+        }
+    }
+
+    async function doTranslateArToEn() {
+        if (isTranslating) return;
+        const val = arTextarea.value.trim();
+        if (!val) return;
+        isTranslating = true;
+        if (statusSpan) {
+            statusSpan.textContent = 'جاري الترجمة AR → EN...';
+            statusSpan.className = 'payment-translate-status text-[10px] text-emerald-600 font-semibold animate-pulse';
+            statusSpan.classList.remove('hidden');
+        }
+        try {
+            const res = await translateText(val, 'ar', 'en');
+            if (res) {
+                enTextarea.value = res;
+                updatePreview();
+                if (statusSpan) {
+                    statusSpan.textContent = '✓ Translated to English';
+                    statusSpan.className = 'payment-translate-status text-[10px] text-emerald-600 font-semibold';
+                    setTimeout(() => { if (statusSpan) statusSpan.classList.add('hidden'); }, 2500);
+                }
+            } else {
+                if (statusSpan) {
+                    statusSpan.textContent = '⚠️ Translation unavailable';
+                    statusSpan.className = 'payment-translate-status text-[10px] text-amber-600 font-medium';
+                    setTimeout(() => { if (statusSpan) statusSpan.classList.add('hidden'); }, 3000);
+                }
+            }
+        } catch (e) {
+            console.error('Translation error:', e);
+            if (statusSpan) {
+                statusSpan.textContent = '⚠️ Error';
+                statusSpan.className = 'payment-translate-status text-[10px] text-red-500 font-medium';
+            }
+        } finally {
+            isTranslating = false;
+        }
+    }
+
+    // Auto-translation when typing with debounce (900ms)
+    enTextarea.addEventListener('input', () => {
+        updatePreview();
+        const autoOpt = document.getElementById('autoTranslatePaymentTerms');
+        if (autoOpt && autoOpt.checked) {
+            clearTimeout(timerEn);
+            timerEn = setTimeout(() => {
+                doTranslateEnToAr();
+            }, 900);
+        }
+    });
+
+    arTextarea.addEventListener('input', () => {
+        updatePreview();
+        const autoOpt = document.getElementById('autoTranslatePaymentTerms');
+        if (autoOpt && autoOpt.checked) {
+            clearTimeout(timerAr);
+            timerAr = setTimeout(() => {
+                doTranslateArToEn();
+            }, 900);
+        }
+    });
+
+    // Instant translation on blur / change
+    enTextarea.addEventListener('change', () => {
+        const autoOpt = document.getElementById('autoTranslatePaymentTerms');
+        if (autoOpt && autoOpt.checked) {
+            clearTimeout(timerEn);
+            doTranslateEnToAr();
+        }
+    });
+
+    arTextarea.addEventListener('change', () => {
+        const autoOpt = document.getElementById('autoTranslatePaymentTerms');
+        if (autoOpt && autoOpt.checked) {
+            clearTimeout(timerAr);
+            doTranslateArToEn();
+        }
+    });
+
+    // Manual on-demand buttons
+    btnTransEnAr.addEventListener('click', () => {
+        doTranslateEnToAr();
+    });
+
+    btnTransArEn.addEventListener('click', () => {
+        doTranslateArToEn();
+    });
+
+    row.querySelector('.remove-payment-term').addEventListener('click', () => {
+        row.remove();
+        renumberPaymentTerms();
+        updatePreview();
+    });
+
+    container.appendChild(row);
+    updatePreview();
+}
+
+function renumberPaymentTerms() {
+    document.querySelectorAll('.payment-term-num').forEach((el, i) => el.textContent = '# 4.' + (i + 1));
 }
 
 function loadDefaultData() {
@@ -288,6 +695,9 @@ function loadDefaultData() {
 
     document.getElementById('termsContainer').innerHTML = '';
     DEFAULT_TERMS.forEach(t => addTermRow(t.en, t.ar));
+
+    document.getElementById('paymentTermsContainer').innerHTML = '';
+    DEFAULT_PAYMENT_TERMS.forEach(pt => addPaymentTermRow(pt.en, pt.ar));
     updatePreview();
 }
 
@@ -447,6 +857,22 @@ function updatePreview() {
             </tr>`;
     });
 
+    // Build payment terms HTML
+    let paymentTermsRows = '';
+    document.querySelectorAll('.payment-term-row').forEach((row, i) => {
+        const en = row.querySelector('.payment-term-en').value || '';
+        const ar = row.querySelector('.payment-term-ar').value || '';
+        paymentTermsRows += `
+            <tr style="vertical-align:top;">
+                <td style="width:50%;padding:5px 7px;border-bottom:1px solid #e2e8f0;border-right:1px solid #e2e8f0;font-size:8px;color:#1e293b;line-height:1.55;">
+                    <b style="color:#92400e;">4.${i+1}</b> ${esc(en)}
+                </td>
+                <td style="width:50%;padding:5px 7px;border-bottom:1px solid #e2e8f0;font-size:8.5px;color:#1e293b;line-height:1.55;text-align:right;direction:rtl;font-family:'Amiri',serif;">
+                    <b style="color:#92400e;">4.${i+1}</b> ${esc(ar)}
+                </td>
+            </tr>`;
+    });
+
     const html = `
     <div class="pdf-page" id="agreementPage">
 
@@ -520,11 +946,19 @@ function updatePreview() {
         </table>
 
         <!-- TERMS & CONDITIONS -->
-        <table style="width:100%;border-collapse:collapse;margin-bottom:10px;border:1px solid #cbd5e1;">
+        <table style="width:100%;border-collapse:collapse;margin-bottom:8px;border:1px solid #cbd5e1;">
             <tr><td colspan="2" style="background:#eff6ff;padding:4px 8px;border-bottom:1px solid #cbd5e1;">
                 <div style="font-size:8.5px;font-weight:700;color:#1e3a8a;">Terms &amp; Conditions &nbsp;/&nbsp; <span style="font-family:'Amiri',serif;">الشروط والأحكام</span></div>
             </td></tr>
             ${termsRows}
+        </table>
+
+        <!-- PAYMENT TERMS -->
+        <table style="width:100%;border-collapse:collapse;margin-bottom:10px;border:1px solid #cbd5e1;">
+            <tr><td colspan="2" style="background:#fefce8;padding:4px 8px;border-bottom:1px solid #fde68a;">
+                <div style="font-size:8.5px;font-weight:700;color:#92400e;">4. Payment Terms &nbsp;/&nbsp; <span style="font-family:'Amiri',serif;">شروط الدفع</span></div>
+            </td></tr>
+            ${paymentTermsRows}
         </table>
 
         <!-- SIGNATURES -->
@@ -570,7 +1004,7 @@ function updatePreview() {
         </table>
 
         <!-- FOOTER -->
-        <div style="position:absolute;bottom:10mm;left:10mm;right:10mm;border-top:1.5px solid #1e3a8a;padding-top:4px;text-align:center;">
+        <div style="margin-top:auto;padding-top:6px;border-top:1.5px solid #1e3a8a;text-align:center;">
             <div style="font-family:'Amiri',serif;font-size:8px;color:#1e3a8a;font-weight:bold;direction:rtl;margin-bottom:1px;">
                 الخبر الجنوبية &ndash; شارع دارين &ndash; رقم المبنى ٨٨١١ &ndash; جوال : ٠٥٤٢٦٩٥٧٤٣ &ndash; الخبر &ndash; المملكة العربية السعودية
             </div>
@@ -624,6 +1058,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('addTermBtn').addEventListener('click', () => { addTermRow('', ''); });
+    const addPtBtn = document.getElementById('addPaymentTermBtn');
+    if (addPtBtn) {
+        addPtBtn.addEventListener('click', () => { addPaymentTermRow('', ''); });
+    }
     document.getElementById('topPrintBtn').addEventListener('click', printPDF);
     document.getElementById('generateBtn').addEventListener('click', printPDF);
     document.getElementById('resetBtn').addEventListener('click', () => {
