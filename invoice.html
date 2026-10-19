@@ -435,25 +435,101 @@
                             <div class="section-title">05 · BANK DETAILS</div>
                         </div>
 
+                        <div class="mb-3">
+                            <label class="form-label">ACCOUNT NAME</label>
+                            <input type="text" id="bankAccountName" class="form-input" value="Jibarco Company">
+                        </div>
+
                         <div class="grid grid-cols-2 gap-3 mb-3">
                             <div>
                                 <label class="form-label">BANK NAME</label>
-                                <input type="text" id="bankName" class="form-input" value="SAB">
+                                <input type="text" id="bankName" class="form-input" value="Saudi National Bank">
                             </div>
                             <div>
                                 <label class="form-label">BRANCH</label>
-                                <input type="text" id="bankBranch" class="form-input" value="Al Jubail">
+                                <input type="text" id="bankBranch" class="form-input" value="Al Khobar">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="form-label">ACCOUNT NUMBER</label>
-                                <input type="text" id="bankAccount" class="form-input" value="242354728002">
+                                <input type="text" id="bankAccount" class="form-input" value="98400004760905">
                             </div>
                             <div>
                                 <label class="form-label">IBAN NUMBER</label>
-                                <input type="text" id="bankIban" class="form-input" value="SA8145000000242354728002">
+                                <input type="text" id="bankIban" class="form-input" value="SA5110000098400004760905">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 06 · OFFICIAL STAMPS & SIGNATURES -->
+                    <div class="section-card border-l-4 border-l-emerald-600">
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="section-title">06 · OFFICIAL STAMPS &amp; SIGNATURES / الأختام والتوقيع</div>
+                            <span class="text-[9.5px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded tracking-normal">Auto-Background Removal</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mb-3 font-medium">Select stamp images from your PC. The system automatically removes white paper backgrounds like in MS Word, making stamps transparent on the invoice.</p>
+
+                        <!-- PREPARED BY STAMP (JIBARCO) -->
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg mb-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-xs text-blue-900">Prepared By Stamp (ختم أعدت بواسطة - جيباركو)</span>
+                                <span id="prepStampStatus" class="text-[10px] text-slate-400 font-semibold">No stamp chosen</span>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <input type="file" id="prepStampInput" accept="image/*" class="hidden">
+                                <button type="button" onclick="document.getElementById('prepStampInput').click()" class="btn-blue text-[10.5px] py-1.5 px-3 flex items-center gap-1.5 shadow-sm">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                    Select Stamp from PC / اختر الختم من جهازك
+                                </button>
+                                <button type="button" id="prepRemoveStampBtn" class="hidden btn-ghost text-[10.5px] py-1.5 px-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                                    Remove Stamp / حذف
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 pt-2 border-t border-slate-200">
+                                <label class="flex items-center gap-2 text-[11px] font-medium text-slate-700 cursor-pointer">
+                                    <input type="checkbox" id="prep_removeBg" checked class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+                                    <span>Remove White Background (شفاف مثل وورد)</span>
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase">Stamp Size:</span>
+                                    <input type="range" id="prep_stampHeight" min="30" max="75" value="50" class="w-24 h-1.5 bg-slate-200 rounded-lg cursor-pointer">
+                                    <span id="prep_sizeLabel" class="text-[10.5px] text-slate-600 font-semibold">50px</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RECEIVED BY STAMP (CLIENT) -->
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-xs text-slate-800">Received By Stamp (ختم تم الاستلام من قبل - العميل)</span>
+                                <span id="recvStampStatus" class="text-[10px] text-slate-400 font-semibold">No stamp chosen</span>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <input type="file" id="recvStampInput" accept="image/*" class="hidden">
+                                <button type="button" onclick="document.getElementById('recvStampInput').click()" class="btn-ghost text-[10.5px] py-1.5 px-3 flex items-center gap-1.5 text-slate-700 border-slate-300 hover:bg-slate-100 shadow-sm">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                    Select Stamp from PC / اختر ختم المستلم
+                                </button>
+                                <button type="button" id="recvRemoveStampBtn" class="hidden btn-ghost text-[10.5px] py-1.5 px-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                                    Remove Stamp / حذف
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 pt-2 border-t border-slate-200">
+                                <label class="flex items-center gap-2 text-[11px] font-medium text-slate-700 cursor-pointer">
+                                    <input type="checkbox" id="recv_removeBg" checked class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+                                    <span>Remove White Background (شفاف مثل وورد)</span>
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase">Stamp Size:</span>
+                                    <input type="range" id="recv_stampHeight" min="30" max="75" value="50" class="w-24 h-1.5 bg-slate-200 rounded-lg cursor-pointer">
+                                    <span id="recv_sizeLabel" class="text-[10.5px] text-slate-600 font-semibold">50px</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -498,7 +574,7 @@
     });
 
     function setupEventListeners() {
-        document.querySelectorAll('#invoiceForm input:not([type="checkbox"])').forEach(input => {
+        document.querySelectorAll('#invoiceForm input:not([type="checkbox"]):not([type="file"]):not([type="range"])').forEach(input => {
             input.addEventListener('input', updateRender);
         });
 
@@ -522,6 +598,79 @@
             }
             updateRender();
         });
+
+        // Stamp controls event listeners (Prepared by & Received by)
+        const prepStampInput = document.getElementById('prepStampInput');
+        if (prepStampInput) {
+            prepStampInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) handlePrepStampUpload(e.target.files[0]);
+            });
+        }
+
+        const recvStampInput = document.getElementById('recvStampInput');
+        if (recvStampInput) {
+            recvStampInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) handleRecvStampUpload(e.target.files[0]);
+            });
+        }
+
+        const prepRemoveBg = document.getElementById('prep_removeBg');
+        if (prepRemoveBg) prepRemoveBg.addEventListener('change', reprocessPrepStamp);
+
+        const recvRemoveBg = document.getElementById('recv_removeBg');
+        if (recvRemoveBg) recvRemoveBg.addEventListener('change', reprocessRecvStamp);
+
+        const prepStampHeightSlider = document.getElementById('prep_stampHeight');
+        if (prepStampHeightSlider) {
+            prepStampHeightSlider.addEventListener('input', (e) => {
+                prepStampHeight = parseInt(e.target.value) || 50;
+                const lbl = document.getElementById('prep_sizeLabel');
+                if (lbl) lbl.textContent = prepStampHeight + 'px';
+                updateRender();
+            });
+        }
+
+        const recvStampHeightSlider = document.getElementById('recv_stampHeight');
+        if (recvStampHeightSlider) {
+            recvStampHeightSlider.addEventListener('input', (e) => {
+                recvStampHeight = parseInt(e.target.value) || 50;
+                const lbl = document.getElementById('recv_sizeLabel');
+                if (lbl) lbl.textContent = recvStampHeight + 'px';
+                updateRender();
+            });
+        }
+
+        const prepRemoveBtn = document.getElementById('prepRemoveStampBtn');
+        if (prepRemoveBtn) {
+            prepRemoveBtn.addEventListener('click', () => {
+                prepStampRawImg = null;
+                prepStampProcessedData = '';
+                if (prepStampInput) prepStampInput.value = '';
+                const statusEl = document.getElementById('prepStampStatus');
+                if (statusEl) {
+                    statusEl.textContent = 'No stamp chosen';
+                    statusEl.className = 'text-[10px] text-slate-400 font-semibold';
+                }
+                prepRemoveBtn.classList.add('hidden');
+                updateRender();
+            });
+        }
+
+        const recvRemoveBtn = document.getElementById('recvRemoveStampBtn');
+        if (recvRemoveBtn) {
+            recvRemoveBtn.addEventListener('click', () => {
+                recvStampRawImg = null;
+                recvStampProcessedData = '';
+                if (recvStampInput) recvStampInput.value = '';
+                const statusEl = document.getElementById('recvStampStatus');
+                if (statusEl) {
+                    statusEl.textContent = 'No stamp chosen';
+                    statusEl.className = 'text-[10px] text-slate-400 font-semibold';
+                }
+                recvRemoveBtn.classList.add('hidden');
+                updateRender();
+            });
+        }
 
         document.getElementById('includeStampCheckbox') && document.getElementById('includeStampCheckbox').addEventListener('change', updateRender);
         document.getElementById('addLineItemBtn').addEventListener('click', () => addLineItemRow());
@@ -700,6 +849,119 @@
         return btoa(binary);
     }
 
+    // STAMP STATE & IMAGE PROCESSING (Same as Agreement Service)
+    let prepStampRawImg = null;
+    let prepStampProcessedData = '';
+    let prepStampHeight = 50;
+
+    let recvStampRawImg = null;
+    let recvStampProcessedData = '';
+    let recvStampHeight = 50;
+
+    function processImageWithTransparency(img, removeBg, threshold = 215) {
+        if (!img) return '';
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        if (!removeBg) {
+            return canvas.toDataURL('image/png');
+        }
+
+        try {
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const d = imgData.data;
+            const t = Number(threshold) || 215;
+
+            for (let i = 0; i < d.length; i += 4) {
+                const r = d[i];
+                const g = d[i+1];
+                const b = d[i+2];
+                const minVal = Math.min(r, g, b);
+                const maxVal = Math.max(r, g, b);
+                const diff = maxVal - minVal;
+
+                // When background is paper-like (near white or light neutral gray/cream)
+                if (minVal >= t && diff < 35) {
+                    d[i+3] = 0; // 100% transparent
+                } else if (minVal >= (t - 25) && diff < 35) {
+                    // Anti-aliased smooth edge
+                    const alphaFactor = (t - minVal) / 25;
+                    d[i+3] = Math.round(d[i+3] * alphaFactor);
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+            return canvas.toDataURL('image/png');
+        } catch(err) {
+            console.error('Error processing stamp transparency', err);
+            return canvas.toDataURL('image/png');
+        }
+    }
+
+    function handlePrepStampUpload(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                prepStampRawImg = img;
+                reprocessPrepStamp();
+                const statusEl = document.getElementById('prepStampStatus');
+                if (statusEl) {
+                    statusEl.textContent = file.name.length > 18 ? file.name.substring(0, 15) + '...' : file.name;
+                    statusEl.className = 'text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300';
+                }
+                const removeBtn = document.getElementById('prepRemoveStampBtn');
+                if (removeBtn) removeBtn.classList.remove('hidden');
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function reprocessPrepStamp() {
+        if (!prepStampRawImg) {
+            prepStampProcessedData = '';
+        } else {
+            const removeBg = document.getElementById('prep_removeBg') ? document.getElementById('prep_removeBg').checked : true;
+            prepStampProcessedData = processImageWithTransparency(prepStampRawImg, removeBg, 215);
+        }
+        updateRender();
+    }
+
+    function handleRecvStampUpload(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                recvStampRawImg = img;
+                reprocessRecvStamp();
+                const statusEl = document.getElementById('recvStampStatus');
+                if (statusEl) {
+                    statusEl.textContent = file.name.length > 18 ? file.name.substring(0, 15) + '...' : file.name;
+                    statusEl.className = 'text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300';
+                }
+                const removeBtn = document.getElementById('recvRemoveStampBtn');
+                if (removeBtn) removeBtn.classList.remove('hidden');
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function reprocessRecvStamp() {
+        if (!recvStampRawImg) {
+            recvStampProcessedData = '';
+        } else {
+            const removeBg = document.getElementById('recv_removeBg') ? document.getElementById('recv_removeBg').checked : true;
+            recvStampProcessedData = processImageWithTransparency(recvStampRawImg, removeBg, 215);
+        }
+        updateRender();
+    }
+
     // MAIN RENDER ENGINE
     function updateRender() {
         const includePage2 = document.getElementById('includePage2Checkbox').checked;
@@ -780,9 +1042,6 @@
 
         document.getElementById('totalHoursDisp').textContent = `${totalWorkerHours.toFixed(0)} hrs`;
         document.getElementById('timesheetTotalDisp').textContent = `Timesheet: SAR ${subtotal.toFixed(2)} (+VAT: SAR ${grandTotal.toFixed(2)})`;
-
-        // Dynamic Elements Setup
-        const stampHTML = ''; // Stamp removed
 
         // PAGE 1 HTML TEMPLATE
         const page1HTML = `
@@ -941,7 +1200,7 @@
                             </div>
                             <div style="line-height: 1.3;">
                                 Account Name / <span class="arabic-text">اسم الحساب</span> :<br>
-                                <b>Moana Al Arabia General Contracting Establishment</b><br>
+                                <b>${(document.getElementById('bankAccountName') ? document.getElementById('bankAccountName').value : '') || 'Jibarco Company'}</b><br>
                                 Bank Name / <span class="arabic-text">اسم البنك</span> : <span style="float: right;"><b>${document.getElementById('bankName').value}</b></span><br>
                                 Account Number / <span class="arabic-text">رقم الحساب</span> : <span style="float: right;"><b>${document.getElementById('bankAccount').value}</b></span><br>
                                 IBAN No / <span class="arabic-text">رقم الآيبان</span> :<br>
@@ -952,15 +1211,26 @@
 
                         <!-- Prepared By -->
                         <td style="width: 21%; vertical-align: top; padding: 4px; text-align: center; position: relative;">
-                            <div style="font-size: 7px; font-weight: bold;">Prepared By<br><span class="arabic-text">أعدت بواسطة</span></div>
-                            ${stampHTML}
-                            <div style="margin-top: 50px; font-size: 6.5px; font-weight: bold;">Signature with stamp / <span class="arabic-text">التوقيع مع الختم</span></div>
+                            <div style="font-size: 7px; font-weight: bold; margin-bottom: 2px;">Prepared By<br><span class="arabic-text">أعدت بواسطة</span></div>
+                            <div style="min-height: 50px; height: ${prepStampHeight}px; display: flex; align-items: center; justify-content: center; position: relative; overflow: visible;">
+                                ${prepStampProcessedData 
+                                    ? `<img src="${prepStampProcessedData}" style="max-height: ${prepStampHeight}px; max-width: 95%; object-fit: contain; mix-blend-mode: multiply; display: block; margin: auto;">` 
+                                    : ''
+                                }
+                            </div>
+                            <div style="font-size: 6.5px; font-weight: bold;">Signature with stamp / <span class="arabic-text">التوقيع مع الختم</span></div>
                         </td>
 
                         <!-- Received By -->
-                        <td style="width: 21%; vertical-align: top; padding: 4px; text-align: center;">
-                            <div style="font-size: 7px; font-weight: bold;">Received By<br><span class="arabic-text">تم الاستلام من قبل</span></div>
-                            <div style="margin-top: 50px; font-size: 6.5px; font-weight: bold;">Signature with stamp / <span class="arabic-text">التوقيع مع الختم</span></div>
+                        <td style="width: 21%; vertical-align: top; padding: 4px; text-align: center; position: relative;">
+                            <div style="font-size: 7px; font-weight: bold; margin-bottom: 2px;">Received By<br><span class="arabic-text">تم الاستلام من قبل</span></div>
+                            <div style="min-height: 50px; height: ${recvStampHeight}px; display: flex; align-items: center; justify-content: center; position: relative; overflow: visible;">
+                                ${recvStampProcessedData 
+                                    ? `<img src="${recvStampProcessedData}" style="max-height: ${recvStampHeight}px; max-width: 95%; object-fit: contain; mix-blend-mode: multiply; display: block; margin: auto;">` 
+                                    : ''
+                                }
+                            </div>
+                            <div style="font-size: 6.5px; font-weight: bold;">Signature with stamp / <span class="arabic-text">التوقيع مع الختم</span></div>
                         </td>
 
                         <!-- ZATCA QR CODE -->
